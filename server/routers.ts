@@ -962,6 +962,709 @@ Format the report professionally with clear headings and bullet points where app
         };
       }),
   }),
+
+  // ============ VENDOR ROUTER ============
+  vendors: router({
+    list: protectedProcedure.query(async () => {
+      return db.getVendors();
+    }),
+    
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getVendorById(input.id);
+      }),
+    
+    getByCategory: protectedProcedure
+      .input(z.object({ category: z.string() }))
+      .query(async ({ input }) => {
+        return db.getVendorsByCategory(input.category);
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        contactPerson: z.string().optional(),
+        email: z.string().email().optional(),
+        phone: z.string().optional(),
+        address: z.string().optional(),
+        category: z.enum(['materials', 'equipment', 'labor', 'services', 'furniture', 'fixtures', 'electrical', 'plumbing', 'hvac', 'other']),
+        rating: z.number().min(0).max(5).optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createVendor({
+          ...input,
+          createdById: ctx.user.id,
+        });
+        return { id };
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        contactPerson: z.string().optional(),
+        email: z.string().email().optional(),
+        phone: z.string().optional(),
+        address: z.string().optional(),
+        category: z.enum(['materials', 'equipment', 'labor', 'services', 'furniture', 'fixtures', 'electrical', 'plumbing', 'hvac', 'other']).optional(),
+        rating: z.number().min(0).max(5).optional(),
+        notes: z.string().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateVendor(id, data);
+        return { success: true };
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteVendor(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ============ PROCUREMENT ROUTER ============
+  procurement: router({
+    list: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getProcurementItemsByProject(input.projectId);
+      }),
+    
+    stats: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getProcurementStats(input.projectId);
+      }),
+    
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getProcurementItemById(input.id);
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        name: z.string().min(1),
+        description: z.string().optional(),
+        category: z.enum(['materials', 'equipment', 'labor', 'services', 'furniture', 'fixtures', 'electrical', 'plumbing', 'hvac', 'other']),
+        quantity: z.string(),
+        unit: z.string().default('pcs'),
+        estimatedUnitCost: z.string().optional(),
+        priority: z.enum(['low', 'medium', 'high', 'critical']).default('medium'),
+        requiredDate: z.string().optional(),
+        vendorId: z.number().optional(),
+        specifications: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const totalCost = input.estimatedUnitCost 
+          ? (parseFloat(input.quantity) * parseFloat(input.estimatedUnitCost)).toString()
+          : undefined;
+        
+        const id = await db.createProcurementItem({
+          ...input,
+          totalCost,
+          requiredDate: input.requiredDate ? new Date(input.requiredDate) : undefined,
+          createdById: ctx.user.id,
+        });
+        
+        await db.createActivityLog({
+          projectId: input.projectId,
+          userId: ctx.user.id,
+          action: 'created',
+          entityType: 'procurement',
+          entityId: id,
+          details: { name: input.name, category: input.category },
+        });
+        
+        return { id };
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        description: z.string().optional(),
+        category: z.enum(['materials', 'equipment', 'labor', 'services', 'furniture', 'fixtures', 'electrical', 'plumbing', 'hvac', 'other']).optional(),
+        quantity: z.string().optional(),
+        unit: z.string().optional(),
+        estimatedUnitCost: z.string().optional(),
+        actualUnitCost: z.string().optional(),
+        status: z.enum(['pending', 'quoted', 'approved', 'ordered', 'shipped', 'delivered', 'cancelled']).optional(),
+        priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+        requiredDate: z.string().optional(),
+        vendorId: z.number().optional().nullable(),
+        specifications: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        
+        // Calculate total cost if quantity and unit cost are provided
+        let totalCost: string | undefined;
+        if (data.quantity && data.actualUnitCost) {
+          totalCost = (parseFloat(data.quantity) * parseFloat(data.actualUnitCost)).toString();
+        } else if (data.quantity && data.estimatedUnitCost) {
+          totalCost = (parseFloat(data.quantity) * parseFloat(data.estimatedUnitCost)).toString();
+        }
+        
+        await db.updateProcurementItem(id, {
+          ...data,
+          totalCost,
+          requiredDate: data.requiredDate ? new Date(data.requiredDate) : undefined,
+        });
+        return { success: true };
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteProcurementItem(input.id);
+        return { success: true };
+      }),
+    
+    // AI-powered procurement list generation
+    generateList: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        description: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const project = await db.getProjectById(input.projectId);
+        if (!project) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+        }
+        
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: 'system',
+              content: `You are a construction procurement specialist. Generate a detailed procurement list based on the project requirements. Return a JSON array of items with the following structure:
+[
+  {
+    "name": "Item name",
+    "description": "Brief description",
+    "category": "materials|equipment|labor|services|furniture|fixtures|electrical|plumbing|hvac|other",
+    "quantity": "number",
+    "unit": "pcs|m|m2|m3|kg|set|lot|etc",
+    "estimatedUnitCost": "number",
+    "priority": "low|medium|high|critical",
+    "leadTimeDays": "number",
+    "specifications": "technical specs if any"
+  }
+]
+Only return the JSON array, no other text.`,
+            },
+            {
+              role: 'user',
+              content: `Generate a procurement list for this fit-out project:
+
+Project: ${project.name}
+Location: ${project.location || 'Not specified'}
+Budget: ${project.budget} ${project.currency}
+
+Requirements:
+${input.description}`,
+            },
+          ],
+        });
+        
+        const content = response.choices[0]?.message?.content;
+        try {
+          const items = JSON.parse(typeof content === 'string' ? content : '[]');
+          return { items };
+        } catch {
+          return { items: [], error: 'Failed to parse AI response' };
+        }
+      }),
+    
+    // AI vendor suggestion
+    suggestVendors: protectedProcedure
+      .input(z.object({
+        itemId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const item = await db.getProcurementItemById(input.itemId);
+        if (!item) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Item not found' });
+        }
+        
+        // Get vendors in the same category
+        const vendors = await db.getVendorsByCategory(item.category);
+        
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a procurement advisor. Analyze the item requirements and available vendors to provide recommendations. Return a JSON object with vendor rankings and reasoning.',
+            },
+            {
+              role: 'user',
+              content: `Recommend vendors for this procurement item:
+
+Item: ${item.name}
+Category: ${item.category}
+Quantity: ${item.quantity} ${item.unit}
+Specifications: ${item.specifications || 'None specified'}
+
+Available vendors:
+${vendors.map(v => `- ${v.name} (Rating: ${v.rating}/5, Contact: ${v.contactPerson || 'N/A'})`).join('\n')}
+
+Provide recommendations with reasoning.`,
+            },
+          ],
+        });
+        
+        const content = response.choices[0]?.message?.content;
+        return { 
+          recommendations: typeof content === 'string' ? content : '',
+          availableVendors: vendors,
+        };
+      }),
+  }),
+
+  // ============ PURCHASE ORDER ROUTER ============
+  purchaseOrders: router({
+    list: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getPurchaseOrdersByProject(input.projectId);
+      }),
+    
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getPurchaseOrderById(input.id);
+      }),
+    
+    getItems: protectedProcedure
+      .input(z.object({ purchaseOrderId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getPurchaseOrderItems(input.purchaseOrderId);
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        vendorId: z.number(),
+        orderNumber: z.string(),
+        expectedDeliveryDate: z.string().optional(),
+        shippingAddress: z.string().optional(),
+        paymentTerms: z.string().optional(),
+        notes: z.string().optional(),
+        items: z.array(z.object({
+          procurementItemId: z.number().optional(),
+          description: z.string(),
+          quantity: z.string(),
+          unit: z.string(),
+          unitPrice: z.string(),
+        })),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { items, ...orderData } = input;
+        
+        // Calculate total amount
+        const totalAmount = items.reduce((sum, item) => {
+          return sum + (parseFloat(item.quantity) * parseFloat(item.unitPrice));
+        }, 0).toString();
+        
+        const orderId = await db.createPurchaseOrder({
+          ...orderData,
+          totalAmount,
+          expectedDeliveryDate: orderData.expectedDeliveryDate ? new Date(orderData.expectedDeliveryDate) : undefined,
+          createdById: ctx.user.id,
+        });
+        
+        // Create order items
+        for (const item of items) {
+          await db.createPurchaseOrderItem({
+            purchaseOrderId: orderId,
+            procurementItemId: item.procurementItemId,
+            description: item.description,
+            quantity: item.quantity,
+            unit: item.unit,
+            unitPrice: item.unitPrice,
+            totalPrice: (parseFloat(item.quantity) * parseFloat(item.unitPrice)).toString(),
+          });
+          
+          // Update procurement item status if linked
+          if (item.procurementItemId) {
+            await db.updateProcurementItem(item.procurementItemId, { status: 'ordered' });
+          }
+        }
+        
+        await db.createActivityLog({
+          projectId: input.projectId,
+          userId: ctx.user.id,
+          action: 'created',
+          entityType: 'purchase_order',
+          entityId: orderId,
+          details: { orderNumber: input.orderNumber, totalAmount },
+        });
+        
+        return { id: orderId };
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(['draft', 'pending_approval', 'approved', 'sent', 'acknowledged', 'shipped', 'delivered', 'cancelled']).optional(),
+        expectedDeliveryDate: z.string().optional(),
+        actualDeliveryDate: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+        await db.updatePurchaseOrder(id, {
+          ...data,
+          expectedDeliveryDate: data.expectedDeliveryDate ? new Date(data.expectedDeliveryDate) : undefined,
+          actualDeliveryDate: data.actualDeliveryDate ? new Date(data.actualDeliveryDate) : undefined,
+          approvedById: data.status === 'approved' ? ctx.user.id : undefined,
+        });
+        return { success: true };
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deletePurchaseOrder(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ============ DELIVERY ROUTER ============
+  deliveries: router({
+    list: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getDeliveriesByProject(input.projectId);
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        purchaseOrderId: z.number(),
+        projectId: z.number(),
+        deliveryNumber: z.string().optional(),
+        scheduledDate: z.string(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await db.createDelivery({
+          ...input,
+          scheduledDate: new Date(input.scheduledDate),
+        });
+        return { id };
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(['scheduled', 'in_transit', 'delivered', 'partial', 'rejected']).optional(),
+        actualDate: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+        await db.updateDelivery(id, {
+          ...data,
+          actualDate: data.actualDate ? new Date(data.actualDate) : undefined,
+          receivedById: data.status === 'delivered' ? ctx.user.id : undefined,
+        });
+        return { success: true };
+      }),
+  }),
+
+  // ============ BASELINE ROUTER ============
+  baseline: router({
+    list: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getBaselinesByProject(input.projectId);
+      }),
+    
+    getActive: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getActiveBaseline(input.projectId);
+      }),
+    
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getBaselineById(input.id);
+      }),
+    
+    getTasks: protectedProcedure
+      .input(z.object({ baselineId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getBaselineTasks(input.baselineId);
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        name: z.string().min(1),
+        description: z.string().optional(),
+        plannedStartDate: z.string(),
+        plannedEndDate: z.string(),
+        plannedBudget: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Deactivate existing active baselines
+        const existingBaselines = await db.getBaselinesByProject(input.projectId);
+        for (const baseline of existingBaselines) {
+          if (baseline.isActive) {
+            await db.updateBaseline(baseline.id, { isActive: false });
+          }
+        }
+        
+        // Get current version number
+        const version = existingBaselines.length + 1;
+        
+        const id = await db.createBaseline({
+          ...input,
+          version,
+          plannedStartDate: new Date(input.plannedStartDate),
+          plannedEndDate: new Date(input.plannedEndDate),
+          createdById: ctx.user.id,
+        });
+        
+        // Copy current tasks as baseline tasks
+        const tasks = await db.getTasksByProject(input.projectId);
+        const baselineTasks = tasks.map((task, index) => ({
+          baselineId: id,
+          taskId: task.id,
+          taskName: task.title,
+          plannedStartDate: task.startDate,
+          plannedEndDate: task.dueDate,
+          plannedProgress: task.progress || 0,
+          order: index,
+        }));
+        
+        if (baselineTasks.length > 0) {
+          await db.createBaselineTasks(baselineTasks);
+        }
+        
+        await db.createActivityLog({
+          projectId: input.projectId,
+          userId: ctx.user.id,
+          action: 'created',
+          entityType: 'baseline',
+          entityId: id,
+          details: { name: input.name, version },
+        });
+        
+        return { id };
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        description: z.string().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateBaseline(id, data);
+        return { success: true };
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteBaselineTasks(input.id);
+        await db.deleteBaseline(input.id);
+        return { success: true };
+      }),
+    
+    // Get variance analysis
+    getVariances: protectedProcedure
+      .input(z.object({ projectId: z.number(), baselineId: z.number().optional() }))
+      .query(async ({ input }) => {
+        return db.getScheduleVariances(input.projectId, input.baselineId);
+      }),
+    
+    // Calculate and record variances
+    calculateVariances: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .mutation(async ({ input }) => {
+        const baseline = await db.getActiveBaseline(input.projectId);
+        if (!baseline) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'No active baseline found' });
+        }
+        
+        const baselineTasks = await db.getBaselineTasks(baseline.id);
+        const currentTasks = await db.getTasksByProject(input.projectId);
+        const variances: any[] = [];
+        
+        for (const bt of baselineTasks) {
+          const currentTask = currentTasks.find(t => t.id === bt.taskId);
+          if (!currentTask) continue;
+          
+          // Check start date variance
+          if (bt.plannedStartDate && currentTask.startDate) {
+            const plannedStart = new Date(bt.plannedStartDate);
+            const actualStart = new Date(currentTask.startDate);
+            const daysDiff = Math.round((actualStart.getTime() - plannedStart.getTime()) / (1000 * 60 * 60 * 24));
+            
+            if (daysDiff !== 0) {
+              const varianceId = await db.createScheduleVariance({
+                projectId: input.projectId,
+                baselineId: baseline.id,
+                taskId: currentTask.id,
+                varianceType: 'start_delay',
+                plannedValue: bt.plannedStartDate.toISOString(),
+                actualValue: currentTask.startDate.toISOString(),
+                varianceDays: daysDiff,
+                impact: Math.abs(daysDiff) > 7 ? 'high' : Math.abs(daysDiff) > 3 ? 'medium' : 'low',
+              });
+              variances.push({ id: varianceId, type: 'start_delay', days: daysDiff });
+            }
+          }
+          
+          // Check progress variance
+          if (bt.plannedProgress !== undefined && currentTask.progress !== undefined) {
+            const progressDiff = (currentTask.progress || 0) - (bt.plannedProgress || 0);
+            if (Math.abs(progressDiff) > 10) {
+              const varianceId = await db.createScheduleVariance({
+                projectId: input.projectId,
+                baselineId: baseline.id,
+                taskId: currentTask.id,
+                varianceType: 'progress_variance',
+                plannedValue: bt.plannedProgress?.toString() || '0',
+                actualValue: currentTask.progress?.toString() || '0',
+                variancePercent: progressDiff.toString(),
+                impact: Math.abs(progressDiff) > 30 ? 'high' : Math.abs(progressDiff) > 15 ? 'medium' : 'low',
+              });
+              variances.push({ id: varianceId, type: 'progress_variance', percent: progressDiff });
+            }
+          }
+        }
+        
+        return { variances, count: variances.length };
+      }),
+    
+    // Get progress snapshots
+    getSnapshots: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getProgressSnapshots(input.projectId);
+      }),
+    
+    // Record progress snapshot
+    recordSnapshot: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const project = await db.getProjectById(input.projectId);
+        const baseline = await db.getActiveBaseline(input.projectId);
+        const tasks = await db.getTasksByProject(input.projectId);
+        const expenses = await db.getExpensesByProject(input.projectId);
+        
+        if (!project) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+        }
+        
+        // Calculate actual progress
+        const completedTasks = tasks.filter(t => t.status === 'completed').length;
+        const actualProgress = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
+        
+        // Calculate planned progress based on timeline
+        let plannedProgress = 0;
+        if (project.startDate && project.endDate) {
+          const start = new Date(project.startDate).getTime();
+          const end = new Date(project.endDate).getTime();
+          const now = Date.now();
+          const totalDuration = end - start;
+          const elapsed = now - start;
+          plannedProgress = Math.min(100, Math.max(0, Math.round((elapsed / totalDuration) * 100)));
+        }
+        
+        // Calculate costs
+        const actualCost = expenses.reduce((sum, e) => sum + parseFloat(e.amount as any || '0'), 0);
+        const plannedValue = project.budget ? parseFloat(project.budget as any) * (plannedProgress / 100) : 0;
+        const earnedValue = project.budget ? parseFloat(project.budget as any) * (actualProgress / 100) : 0;
+        
+        // Calculate performance indices
+        const spi = plannedProgress > 0 ? (actualProgress / plannedProgress) : 1;
+        const cpi = actualCost > 0 ? (earnedValue / actualCost) : 1;
+        
+        const id = await db.createProgressSnapshot({
+          projectId: input.projectId,
+          baselineId: baseline?.id,
+          snapshotDate: new Date(),
+          plannedProgress,
+          actualProgress,
+          schedulePerformanceIndex: spi.toFixed(2),
+          costPerformanceIndex: cpi.toFixed(2),
+          plannedValue: plannedValue.toString(),
+          earnedValue: earnedValue.toString(),
+          actualCost: actualCost.toString(),
+          notes: input.notes,
+        });
+        
+        return { id, spi, cpi, actualProgress, plannedProgress };
+      }),
+    
+    // AI schedule optimization
+    analyzeSchedule: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .mutation(async ({ input }) => {
+        const project = await db.getProjectById(input.projectId);
+        const baseline = await db.getActiveBaseline(input.projectId);
+        const tasks = await db.getTasksByProject(input.projectId);
+        const snapshots = await db.getProgressSnapshots(input.projectId);
+        
+        if (!project) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+        }
+        
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a construction project scheduling expert. Analyze the project schedule and provide optimization recommendations.',
+            },
+            {
+              role: 'user',
+              content: `Analyze this project schedule and provide recommendations:
+
+Project: ${project.name}
+Status: ${project.status}
+Timeline: ${project.startDate} to ${project.endDate}
+Progress: ${project.progress}%
+
+Baseline: ${baseline ? `v${baseline.version} - ${baseline.name}` : 'No baseline set'}
+
+Tasks (${tasks.length} total):
+${tasks.slice(0, 20).map(t => `- ${t.title}: ${t.status}, Due: ${t.dueDate}, Progress: ${t.progress}%`).join('\n')}
+
+Recent Performance:
+${snapshots.slice(-5).map(s => `- ${s.snapshotDate}: SPI=${s.schedulePerformanceIndex}, CPI=${s.costPerformanceIndex}`).join('\n')}
+
+Provide:
+1. Schedule health assessment
+2. Critical path analysis
+3. Risk areas
+4. Optimization recommendations
+5. Recovery strategies if behind schedule`,
+            },
+          ],
+        });
+        
+        const content = response.choices[0]?.message?.content;
+        return { analysis: typeof content === 'string' ? content : '' };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

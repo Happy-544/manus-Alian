@@ -241,3 +241,207 @@ export const aiChats = mysqlTable("ai_chats", {
 
 export type AiChat = typeof aiChats.$inferSelect;
 export type InsertAiChat = typeof aiChats.$inferInsert;
+
+
+/**
+ * Vendors table - supplier/vendor management
+ */
+export const vendors = mysqlTable("vendors", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  contactPerson: varchar("contactPerson", { length: 255 }),
+  email: varchar("email", { length: 320 }),
+  phone: varchar("phone", { length: 20 }),
+  address: text("address"),
+  category: mysqlEnum("category", ["materials", "equipment", "labor", "services", "furniture", "fixtures", "electrical", "plumbing", "hvac", "other"]).default("other").notNull(),
+  rating: int("rating").default(0),
+  notes: text("notes"),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Vendor = typeof vendors.$inferSelect;
+export type InsertVendor = typeof vendors.$inferInsert;
+
+/**
+ * Procurement items - items to be procured for projects
+ */
+export const procurementItems = mysqlTable("procurement_items", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  category: mysqlEnum("category", ["materials", "equipment", "labor", "services", "furniture", "fixtures", "electrical", "plumbing", "hvac", "other"]).default("other").notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unit: varchar("unit", { length: 50 }).default("pcs"),
+  estimatedUnitCost: decimal("estimatedUnitCost", { precision: 15, scale: 2 }),
+  actualUnitCost: decimal("actualUnitCost", { precision: 15, scale: 2 }),
+  totalCost: decimal("totalCost", { precision: 15, scale: 2 }),
+  status: mysqlEnum("status", ["pending", "quoted", "approved", "ordered", "shipped", "delivered", "cancelled"]).default("pending").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "critical"]).default("medium").notNull(),
+  requiredDate: timestamp("requiredDate"),
+  vendorId: int("vendorId"),
+  specifications: text("specifications"),
+  notes: text("notes"),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProcurementItem = typeof procurementItems.$inferSelect;
+export type InsertProcurementItem = typeof procurementItems.$inferInsert;
+
+/**
+ * Purchase orders - orders placed with vendors
+ */
+export const purchaseOrders = mysqlTable("purchase_orders", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  vendorId: int("vendorId").notNull(),
+  orderNumber: varchar("orderNumber", { length: 50 }).notNull(),
+  status: mysqlEnum("status", ["draft", "pending_approval", "approved", "sent", "acknowledged", "shipped", "delivered", "cancelled"]).default("draft").notNull(),
+  totalAmount: decimal("totalAmount", { precision: 15, scale: 2 }).default("0"),
+  currency: varchar("currency", { length: 3 }).default("USD"),
+  orderDate: timestamp("orderDate"),
+  expectedDeliveryDate: timestamp("expectedDeliveryDate"),
+  actualDeliveryDate: timestamp("actualDeliveryDate"),
+  shippingAddress: text("shippingAddress"),
+  paymentTerms: varchar("paymentTerms", { length: 100 }),
+  notes: text("notes"),
+  createdById: int("createdById").notNull(),
+  approvedById: int("approvedById"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PurchaseOrder = typeof purchaseOrders.$inferSelect;
+export type InsertPurchaseOrder = typeof purchaseOrders.$inferInsert;
+
+/**
+ * Purchase order items - line items in purchase orders
+ */
+export const purchaseOrderItems = mysqlTable("purchase_order_items", {
+  id: int("id").autoincrement().primaryKey(),
+  purchaseOrderId: int("purchaseOrderId").notNull(),
+  procurementItemId: int("procurementItemId"),
+  description: varchar("description", { length: 500 }).notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unit: varchar("unit", { length: 50 }).default("pcs"),
+  unitPrice: decimal("unitPrice", { precision: 15, scale: 2 }).notNull(),
+  totalPrice: decimal("totalPrice", { precision: 15, scale: 2 }).notNull(),
+  receivedQuantity: decimal("receivedQuantity", { precision: 10, scale: 2 }).default("0"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PurchaseOrderItem = typeof purchaseOrderItems.$inferSelect;
+export type InsertPurchaseOrderItem = typeof purchaseOrderItems.$inferInsert;
+
+/**
+ * Delivery records - tracking deliveries
+ */
+export const deliveries = mysqlTable("deliveries", {
+  id: int("id").autoincrement().primaryKey(),
+  purchaseOrderId: int("purchaseOrderId").notNull(),
+  projectId: int("projectId").notNull(),
+  deliveryNumber: varchar("deliveryNumber", { length: 50 }),
+  status: mysqlEnum("status", ["scheduled", "in_transit", "delivered", "partial", "rejected"]).default("scheduled").notNull(),
+  scheduledDate: timestamp("scheduledDate"),
+  actualDate: timestamp("actualDate"),
+  receivedById: int("receivedById"),
+  notes: text("notes"),
+  attachments: json("attachments").$type<string[]>(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Delivery = typeof deliveries.$inferSelect;
+export type InsertDelivery = typeof deliveries.$inferInsert;
+
+
+/**
+ * Project baselines - snapshots of planned schedules
+ */
+export const projectBaselines = mysqlTable("project_baselines", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  version: int("version").default(1).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  plannedStartDate: timestamp("plannedStartDate").notNull(),
+  plannedEndDate: timestamp("plannedEndDate").notNull(),
+  plannedBudget: decimal("plannedBudget", { precision: 15, scale: 2 }),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProjectBaseline = typeof projectBaselines.$inferSelect;
+export type InsertProjectBaseline = typeof projectBaselines.$inferInsert;
+
+/**
+ * Baseline tasks - planned task schedules in a baseline
+ */
+export const baselineTasks = mysqlTable("baseline_tasks", {
+  id: int("id").autoincrement().primaryKey(),
+  baselineId: int("baselineId").notNull(),
+  taskId: int("taskId"),
+  taskName: varchar("taskName", { length: 255 }).notNull(),
+  plannedStartDate: timestamp("plannedStartDate"),
+  plannedEndDate: timestamp("plannedEndDate"),
+  plannedDuration: int("plannedDuration"),
+  plannedProgress: int("plannedProgress").default(0),
+  dependencies: json("dependencies").$type<number[]>(),
+  order: int("order").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type BaselineTask = typeof baselineTasks.$inferSelect;
+export type InsertBaselineTask = typeof baselineTasks.$inferInsert;
+
+/**
+ * Schedule variances - tracking differences between planned and actual
+ */
+export const scheduleVariances = mysqlTable("schedule_variances", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  baselineId: int("baselineId").notNull(),
+  taskId: int("taskId"),
+  varianceType: mysqlEnum("varianceType", ["start_delay", "end_delay", "duration_change", "progress_variance"]).notNull(),
+  plannedValue: varchar("plannedValue", { length: 255 }),
+  actualValue: varchar("actualValue", { length: 255 }),
+  varianceDays: int("varianceDays"),
+  variancePercent: decimal("variancePercent", { precision: 5, scale: 2 }),
+  impact: mysqlEnum("impact", ["low", "medium", "high", "critical"]).default("low").notNull(),
+  notes: text("notes"),
+  recordedAt: timestamp("recordedAt").defaultNow().notNull(),
+});
+
+export type ScheduleVariance = typeof scheduleVariances.$inferSelect;
+export type InsertScheduleVariance = typeof scheduleVariances.$inferInsert;
+
+/**
+ * Progress snapshots - periodic progress recordings
+ */
+export const progressSnapshots = mysqlTable("progress_snapshots", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  baselineId: int("baselineId"),
+  snapshotDate: timestamp("snapshotDate").notNull(),
+  plannedProgress: int("plannedProgress").default(0),
+  actualProgress: int("actualProgress").default(0),
+  schedulePerformanceIndex: decimal("schedulePerformanceIndex", { precision: 5, scale: 2 }),
+  costPerformanceIndex: decimal("costPerformanceIndex", { precision: 5, scale: 2 }),
+  plannedValue: decimal("plannedValue", { precision: 15, scale: 2 }),
+  earnedValue: decimal("earnedValue", { precision: 15, scale: 2 }),
+  actualCost: decimal("actualCost", { precision: 15, scale: 2 }),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ProgressSnapshot = typeof progressSnapshots.$inferSelect;
+export type InsertProgressSnapshot = typeof progressSnapshots.$inferInsert;

@@ -40,6 +40,8 @@ import {
   PanelLeft,
   Settings,
   Users,
+  Package,
+  Target,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -51,6 +53,8 @@ const menuItems = [
   { icon: FolderKanban, label: "Projects", path: "/projects" },
   { icon: ClipboardList, label: "Tasks", path: "/tasks" },
   { icon: Calendar, label: "Timeline", path: "/timeline" },
+  { icon: Package, label: "Procurement", path: "/procurement" },
+  { icon: Target, label: "Baseline", path: "/baseline" },
   { icon: DollarSign, label: "Budget", path: "/budget" },
   { icon: FileText, label: "Documents", path: "/documents" },
   { icon: Users, label: "Team", path: "/team" },

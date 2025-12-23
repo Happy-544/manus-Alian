@@ -15,6 +15,13 @@
       "when": 1766406444351,
       "tag": "0001_sleepy_black_bird",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1766490244700,
+      "tag": "0002_moaning_silhouette",
+      "breakpoints": true
     }
   ]
 }

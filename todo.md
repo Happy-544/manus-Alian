@@ -87,3 +87,24 @@
 - [x] Update LLM prompt with resource utilization section
 - [x] Update report dialog UI to display resource metrics
 - [x] Update unit tests for resource allocation
+
+## AI Procurement Log Feature
+- [x] Create procurement database schema (vendors, procurement items, orders, deliveries)
+- [x] Create tRPC routers for procurement CRUD operations
+- [x] Build Procurement Log UI page with list view and forms
+- [x] Implement AI tool to auto-generate procurement lists from project requirements
+- [x] Implement AI tool to suggest vendors based on item categories
+- [x] Add order tracking and delivery status management
+- [x] Add procurement reports and cost analysis
+- [x] Add navigation link in sidebar
+- [x] Write unit tests for procurement features
+
+## Baseline Program Feature
+- [x] Create baseline database schema (baseline snapshots, schedule comparisons)
+- [x] Create tRPC routers for baseline CRUD operations
+- [x] Build Baseline Program UI page with schedule visualization
+- [x] Implement baseline vs actual comparison charts
+- [x] Add variance analysis and delay tracking
+- [x] Implement AI tool for schedule optimization recommendations
+- [x] Add navigation link in sidebar
+- [x] Write unit tests for baseline features

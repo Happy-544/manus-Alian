@@ -16,6 +16,8 @@ import Settings from "./pages/Settings";
 import Tasks from "./pages/Tasks";
 import Team from "./pages/Team";
 import Timeline from "./pages/Timeline";
+import Procurement from "./pages/Procurement";
+import Baseline from "./pages/Baseline";
 
 function Router() {
   return (
@@ -26,6 +28,8 @@ function Router() {
         <Route path="/projects/:id" component={ProjectDetail} />
         <Route path="/tasks" component={Tasks} />
         <Route path="/timeline" component={Timeline} />
+        <Route path="/procurement" component={Procurement} />
+        <Route path="/baseline" component={Baseline} />
         <Route path="/budget" component={Budget} />
         <Route path="/documents" component={Documents} />
         <Route path="/team" component={Team} />
