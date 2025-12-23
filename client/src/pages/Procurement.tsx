@@ -58,6 +58,9 @@ export default function Procurement() {
   const [isAIGenerateOpen, setIsAIGenerateOpen] = useState(false);
   const [isVendorSuggestOpen, setIsVendorSuggestOpen] = useState(false);
   const [selectedItemForVendor, setSelectedItemForVendor] = useState<number | null>(null);
+  const [isAlternativeVendorOpen, setIsAlternativeVendorOpen] = useState(false);
+  const [alternativeVendorResult, setAlternativeVendorResult] = useState<any>(null);
+  const [prioritizeFactor, setPrioritizeFactor] = useState<'price' | 'availability' | 'balanced'>('balanced');
   
   // Form states
   const [newItem, setNewItem] = useState({
@@ -86,6 +89,7 @@ export default function Procurement() {
   const [aiDescription, setAiDescription] = useState("");
   const [aiGeneratedItems, setAiGeneratedItems] = useState<any[]>([]);
   const [vendorRecommendations, setVendorRecommendations] = useState("");
+  const [selectedItemForAlternative, setSelectedItemForAlternative] = useState<any>(null);
   
   // Queries
   const { data: projects } = trpc.projects.list.useQuery();
@@ -158,6 +162,14 @@ export default function Procurement() {
     onSuccess: (data) => {
       setVendorRecommendations(data.recommendations);
       setIsVendorSuggestOpen(true);
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  
+  const suggestAlternativeVendors = trpc.procurement.suggestAlternativeVendors.useMutation({
+    onSuccess: (data) => {
+      setAlternativeVendorResult(data);
+      setIsAlternativeVendorOpen(true);
     },
     onError: (error) => toast.error(error.message),
   });
@@ -749,6 +761,7 @@ export default function Procurement() {
                             <Button
                               variant="ghost"
                               size="sm"
+                              title="Suggest Vendors"
                               onClick={() => handleSuggestVendors(item.id)}
                               disabled={suggestVendors.isPending}
                             >
@@ -757,6 +770,23 @@ export default function Procurement() {
                             <Button
                               variant="ghost"
                               size="sm"
+                              title="Find Alternative Vendors"
+                              onClick={() => {
+                                setSelectedItemForAlternative(item);
+                                suggestAlternativeVendors.mutate({
+                                  itemId: item.id,
+                                  currentVendorId: item.vendorId || undefined,
+                                  prioritizeFactor: 'balanced',
+                                });
+                              }}
+                              disabled={suggestAlternativeVendors.isPending}
+                            >
+                              <Building2 className="h-4 w-4 text-blue-600" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              title="Delete Item"
                               onClick={() => deleteItem.mutate({ id: item.id })}
                             >
                               <AlertCircle className="h-4 w-4 text-destructive" />
@@ -933,6 +963,165 @@ export default function Procurement() {
             </div>
             <DialogFooter>
               <Button onClick={() => setIsVendorSuggestOpen(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Alternative Vendor Suggestions Dialog */}
+        <Dialog open={isAlternativeVendorOpen} onOpenChange={setIsAlternativeVendorOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                AI Alternative Vendor Analysis
+              </DialogTitle>
+              <DialogDescription>
+                Price and availability-based vendor recommendations
+              </DialogDescription>
+            </DialogHeader>
+            
+            {alternativeVendorResult && (
+              <div className="space-y-6">
+                {/* Item Info */}
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">Analyzing Item</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div><span className="text-muted-foreground">Name:</span> {alternativeVendorResult.item?.name}</div>
+                    <div><span className="text-muted-foreground">Category:</span> {alternativeVendorResult.item?.category}</div>
+                    <div><span className="text-muted-foreground">Quantity:</span> {alternativeVendorResult.item?.quantity} {alternativeVendorResult.item?.unit}</div>
+                    <div><span className="text-muted-foreground">Est. Cost:</span> ${alternativeVendorResult.item?.estimatedUnitCost || 'N/A'}</div>
+                  </div>
+                </div>
+
+                {/* Current Vendor Analysis */}
+                {alternativeVendorResult.currentVendorAnalysis && (
+                  <div className="border rounded-lg p-4">
+                    <h4 className="font-semibold mb-2 flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      Current Vendor Analysis
+                    </h4>
+                    <p className="text-sm text-muted-foreground">{alternativeVendorResult.currentVendorAnalysis}</p>
+                  </div>
+                )}
+
+                {/* Potential Savings */}
+                <div className="grid grid-cols-3 gap-4">
+                  <Card className="p-4">
+                    <div className="text-sm text-muted-foreground">Potential Savings</div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {alternativeVendorResult.potentialSavings?.percentage || 0}%
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      ~${(alternativeVendorResult.potentialSavings?.amount || 0).toLocaleString()}
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="text-sm text-muted-foreground">Risk Level</div>
+                    <div className={`text-2xl font-bold ${
+                      alternativeVendorResult.riskAssessment === 'low' ? 'text-green-600' :
+                      alternativeVendorResult.riskAssessment === 'medium' ? 'text-yellow-600' :
+                      'text-red-600'
+                    }`}>
+                      {(alternativeVendorResult.riskAssessment || 'Unknown').toUpperCase()}
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="text-sm text-muted-foreground">Alternatives Found</div>
+                    <div className="text-2xl font-bold">
+                      {alternativeVendorResult.alternatives?.length || 0}
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Alternative Vendors List */}
+                <div>
+                  <h4 className="font-semibold mb-3">Recommended Alternatives</h4>
+                  <div className="space-y-3">
+                    {alternativeVendorResult.alternatives?.map((alt: any, index: number) => (
+                      <Card key={index} className="p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h5 className="font-semibold flex items-center gap-2">
+                              #{index + 1} {alt.vendorName}
+                              <Badge variant="outline" className="ml-2">
+                                Score: {alt.overallScore}/100
+                              </Badge>
+                            </h5>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm text-muted-foreground">Est. Price Range</div>
+                            <div className="font-semibold text-green-600">
+                              ${alt.estimatedPriceRange?.low?.toLocaleString()} - ${alt.estimatedPriceRange?.high?.toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span>Lead Time: {alt.leadTimeDays} days</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                            <span>Availability: {alt.availabilityScore}/10</span>
+                          </div>
+                        </div>
+                        
+                        <p className="text-sm text-muted-foreground mb-3">{alt.recommendation}</p>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium text-green-600">Pros:</span>
+                            <ul className="list-disc list-inside text-muted-foreground">
+                              {alt.pros?.map((pro: string, i: number) => (
+                                <li key={i}>{pro}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <span className="font-medium text-red-600">Cons:</span>
+                            <ul className="list-disc list-inside text-muted-foreground">
+                              {alt.cons?.map((con: string, i: number) => (
+                                <li key={i}>{con}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-3 pt-3 border-t">
+                          <Button 
+                            size="sm" 
+                            onClick={() => {
+                              if (selectedItemForAlternative) {
+                                updateItem.mutate({
+                                  id: selectedItemForAlternative.id,
+                                  vendorId: alt.vendorId,
+                                });
+                                toast.success(`Vendor updated to ${alt.vendorName}`);
+                              }
+                            }}
+                          >
+                            Select This Vendor
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Overall Recommendation */}
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    AI Recommendation
+                  </h4>
+                  <p className="text-sm">{alternativeVendorResult.recommendation}</p>
+                </div>
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAlternativeVendorOpen(false)}>Close</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

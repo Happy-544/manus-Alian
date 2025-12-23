@@ -1227,6 +1227,185 @@ Provide recommendations with reasoning.`,
           availableVendors: vendors,
         };
       }),
+    
+    // AI alternative vendor suggestion based on price and availability
+    suggestAlternativeVendors: protectedProcedure
+      .input(z.object({
+        itemId: z.number(),
+        currentVendorId: z.number().optional(),
+        prioritizeFactor: z.enum(['price', 'availability', 'balanced']).default('balanced'),
+      }))
+      .mutation(async ({ input }) => {
+        const item = await db.getProcurementItemById(input.itemId);
+        if (!item) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Item not found' });
+        }
+        
+        // Get all vendors (not just same category) for alternatives
+        const allVendors = await db.getVendors();
+        const categoryVendors = allVendors.filter(v => v.category === item.category || v.category === 'other');
+        
+        // Get current vendor info if specified
+        let currentVendor = null;
+        if (input.currentVendorId) {
+          currentVendor = await db.getVendorById(input.currentVendorId);
+        }
+        
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: 'system',
+              content: `You are an expert procurement analyst specializing in construction and fit-out projects. Your task is to suggest alternative vendors based on price competitiveness and availability.
+
+Analyze the procurement item and available vendors, then provide:
+1. A ranked list of alternative vendors with estimated price ranges and availability scores
+2. Specific recommendations for each vendor
+3. Risk assessment for switching vendors
+4. Potential cost savings analysis
+
+Return your response in this JSON format:
+{
+  "alternatives": [
+    {
+      "vendorName": "string",
+      "vendorId": number,
+      "estimatedPriceRange": { "low": number, "high": number },
+      "availabilityScore": number (1-10),
+      "leadTimeDays": number,
+      "recommendation": "string",
+      "pros": ["string"],
+      "cons": ["string"],
+      "overallScore": number (1-100)
+    }
+  ],
+  "currentVendorAnalysis": "string" (if current vendor provided),
+  "potentialSavings": { "percentage": number, "amount": number },
+  "riskAssessment": "low|medium|high",
+  "recommendation": "string"
+}
+
+Only return valid JSON, no additional text.`,
+            },
+            {
+              role: 'user',
+              content: `Find alternative vendors for this procurement item:
+
+**Item Details:**
+- Name: ${item.name}
+- Category: ${item.category}
+- Quantity: ${item.quantity} ${item.unit}
+- Estimated Unit Cost: ${item.estimatedUnitCost || 'Not specified'}
+- Total Budget: ${item.totalCost || 'Not calculated'}
+- Required Date: ${item.requiredDate ? new Date(item.requiredDate).toLocaleDateString() : 'Not specified'}
+- Specifications: ${item.specifications || 'None specified'}
+- Priority: ${item.priority}
+
+**Current Vendor:** ${currentVendor ? `${currentVendor.name} (Rating: ${currentVendor.rating}/5)` : 'None assigned'}
+
+**Prioritization Factor:** ${input.prioritizeFactor}
+${input.prioritizeFactor === 'price' ? '(Focus on finding the most cost-effective options)' : ''}
+${input.prioritizeFactor === 'availability' ? '(Focus on vendors with fastest delivery and best stock availability)' : ''}
+${input.prioritizeFactor === 'balanced' ? '(Balance between price and availability)' : ''}
+
+**Available Vendors:**
+${categoryVendors.map(v => `- ID: ${v.id}, Name: ${v.name}, Category: ${v.category}, Rating: ${v.rating || 'N/A'}/5, Contact: ${v.contactPerson || 'N/A'}, Email: ${v.email || 'N/A'}, Phone: ${v.phone || 'N/A'}, Address: ${v.address || 'N/A'}, Notes: ${v.notes || 'None'}`).join('\n')}
+
+Provide alternative vendor suggestions with price and availability analysis.`,
+            },
+          ],
+          response_format: {
+            type: 'json_schema',
+            json_schema: {
+              name: 'vendor_alternatives',
+              strict: true,
+              schema: {
+                type: 'object',
+                properties: {
+                  alternatives: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        vendorName: { type: 'string' },
+                        vendorId: { type: 'number' },
+                        estimatedPriceRange: {
+                          type: 'object',
+                          properties: {
+                            low: { type: 'number' },
+                            high: { type: 'number' },
+                          },
+                          required: ['low', 'high'],
+                          additionalProperties: false,
+                        },
+                        availabilityScore: { type: 'number' },
+                        leadTimeDays: { type: 'number' },
+                        recommendation: { type: 'string' },
+                        pros: { type: 'array', items: { type: 'string' } },
+                        cons: { type: 'array', items: { type: 'string' } },
+                        overallScore: { type: 'number' },
+                      },
+                      required: ['vendorName', 'vendorId', 'estimatedPriceRange', 'availabilityScore', 'leadTimeDays', 'recommendation', 'pros', 'cons', 'overallScore'],
+                      additionalProperties: false,
+                    },
+                  },
+                  currentVendorAnalysis: { type: 'string' },
+                  potentialSavings: {
+                    type: 'object',
+                    properties: {
+                      percentage: { type: 'number' },
+                      amount: { type: 'number' },
+                    },
+                    required: ['percentage', 'amount'],
+                    additionalProperties: false,
+                  },
+                  riskAssessment: { type: 'string' },
+                  recommendation: { type: 'string' },
+                },
+                required: ['alternatives', 'currentVendorAnalysis', 'potentialSavings', 'riskAssessment', 'recommendation'],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+        
+        const content = response.choices[0]?.message?.content;
+        try {
+          const result = JSON.parse(typeof content === 'string' ? content : '{}');
+          return {
+            ...result,
+            item: {
+              id: item.id,
+              name: item.name,
+              category: item.category,
+              quantity: item.quantity,
+              unit: item.unit,
+              estimatedUnitCost: item.estimatedUnitCost,
+            },
+            currentVendor: currentVendor ? {
+              id: currentVendor.id,
+              name: currentVendor.name,
+              rating: currentVendor.rating,
+            } : null,
+            availableVendors: categoryVendors,
+          };
+        } catch {
+          return {
+            alternatives: [],
+            currentVendorAnalysis: '',
+            potentialSavings: { percentage: 0, amount: 0 },
+            riskAssessment: 'unknown',
+            recommendation: 'Failed to analyze vendors. Please try again.',
+            item: {
+              id: item.id,
+              name: item.name,
+              category: item.category,
+            },
+            currentVendor: null,
+            availableVendors: categoryVendors,
+            error: 'Failed to parse AI response',
+          };
+        }
+      }),
   }),
 
   // ============ PURCHASE ORDER ROUTER ============
@@ -1391,13 +1570,15 @@ Provide recommendations with reasoning.`,
     getActive: protectedProcedure
       .input(z.object({ projectId: z.number() }))
       .query(async ({ input }) => {
-        return db.getActiveBaseline(input.projectId);
+        const baseline = await db.getActiveBaseline(input.projectId);
+        return baseline ?? null;
       }),
     
     getById: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
-        return db.getBaselineById(input.id);
+        const baseline = await db.getBaselineById(input.id);
+        return baseline ?? null;
       }),
     
     getTasks: protectedProcedure

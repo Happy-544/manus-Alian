@@ -108,3 +108,11 @@
 - [x] Implement AI tool for schedule optimization recommendations
 - [x] Add navigation link in sidebar
 - [x] Write unit tests for baseline features
+
+## Bug Fixes
+- [x] Fix baseline.getActive returning undefined error (tRPC query must return defined value)
+
+## AI Vendor Suggestion Feature
+- [x] Add AI mutation to suggest alternative vendors based on price and availability
+- [x] Update Procurement UI with vendor suggestion button and dialog
+- [x] Add vendor comparison display with price/availability metrics
