@@ -30,6 +30,10 @@ import {
   TrendingUp,
   AlertTriangle,
   DollarSign,
+  Users,
+  UserCheck,
+  UserX,
+  Activity,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
@@ -42,6 +46,19 @@ interface Message {
   type?: "chat" | "summary" | "report";
 }
 
+interface ResourceAllocation {
+  userId: number;
+  name: string;
+  role: string;
+  totalAssigned: number;
+  completed: number;
+  inProgress: number;
+  todo: number;
+  overdue: number;
+  completedThisWeek: number;
+  utilizationRate: number;
+}
+
 interface ReportMetadata {
   projectName: string;
   reportDate: string;
@@ -52,6 +69,13 @@ interface ReportMetadata {
   overdueTasks: number;
   budgetUtilization: number;
   weeklySpending: number;
+  // Resource allocation metrics
+  totalTeamMembers: number;
+  avgUtilization: number;
+  overloadedMembers: number;
+  underutilizedMembers: number;
+  unassignedTasks: number;
+  resourceAllocation: ResourceAllocation[];
 }
 
 export default function AIAssistant() {
@@ -467,36 +491,135 @@ export default function AIAssistant() {
           </DialogHeader>
           
           {reportMetadata && (
-            <div className="grid grid-cols-4 gap-4 py-4 border-b">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-green-600 mb-1">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span className="text-2xl font-bold">{reportMetadata.tasksCompleted}</span>
+            <>
+              {/* Task & Budget Metrics */}
+              <div className="grid grid-cols-4 gap-4 py-4 border-b">
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1 text-green-600 mb-1">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span className="text-2xl font-bold">{reportMetadata.tasksCompleted}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Tasks Completed</p>
                 </div>
-                <p className="text-xs text-muted-foreground">Tasks Completed</p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-blue-600 mb-1">
-                  <TrendingUp className="h-4 w-4" />
-                  <span className="text-2xl font-bold">{reportMetadata.tasksInProgress}</span>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1 text-blue-600 mb-1">
+                    <TrendingUp className="h-4 w-4" />
+                    <span className="text-2xl font-bold">{reportMetadata.tasksInProgress}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">In Progress</p>
                 </div>
-                <p className="text-xs text-muted-foreground">In Progress</p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-amber-600 mb-1">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span className="text-2xl font-bold">{reportMetadata.overdueTasks}</span>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1 text-amber-600 mb-1">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span className="text-2xl font-bold">{reportMetadata.overdueTasks}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Overdue</p>
                 </div>
-                <p className="text-xs text-muted-foreground">Overdue</p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-purple-600 mb-1">
-                  <DollarSign className="h-4 w-4" />
-                  <span className="text-2xl font-bold">{reportMetadata.budgetUtilization}%</span>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1 text-purple-600 mb-1">
+                    <DollarSign className="h-4 w-4" />
+                    <span className="text-2xl font-bold">{reportMetadata.budgetUtilization}%</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Budget Used</p>
                 </div>
-                <p className="text-xs text-muted-foreground">Budget Used</p>
               </div>
-            </div>
+              
+              {/* Resource Allocation Metrics */}
+              <div className="grid grid-cols-4 gap-4 py-4 border-b bg-muted/30">
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1 text-indigo-600 mb-1">
+                    <Users className="h-4 w-4" />
+                    <span className="text-2xl font-bold">{reportMetadata.totalTeamMembers}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Team Members</p>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1 text-cyan-600 mb-1">
+                    <Activity className="h-4 w-4" />
+                    <span className="text-2xl font-bold">{reportMetadata.avgUtilization}%</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Avg Utilization</p>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1 text-red-600 mb-1">
+                    <UserX className="h-4 w-4" />
+                    <span className="text-2xl font-bold">{reportMetadata.overloadedMembers}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Overloaded</p>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1 text-orange-600 mb-1">
+                    <UserCheck className="h-4 w-4" />
+                    <span className="text-2xl font-bold">{reportMetadata.unassignedTasks}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Unassigned Tasks</p>
+                </div>
+              </div>
+              
+              {/* Team Member Workload Table */}
+              {reportMetadata.resourceAllocation && reportMetadata.resourceAllocation.length > 0 && (
+                <div className="py-4 border-b">
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Team Workload Distribution
+                  </h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2 px-2 font-medium">Member</th>
+                          <th className="text-left py-2 px-2 font-medium">Role</th>
+                          <th className="text-center py-2 px-2 font-medium">Total</th>
+                          <th className="text-center py-2 px-2 font-medium">Done</th>
+                          <th className="text-center py-2 px-2 font-medium">In Progress</th>
+                          <th className="text-center py-2 px-2 font-medium">Overdue</th>
+                          <th className="text-center py-2 px-2 font-medium">Utilization</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reportMetadata.resourceAllocation.map((member, idx) => (
+                          <tr key={idx} className="border-b last:border-0">
+                            <td className="py-2 px-2 font-medium">{member.name}</td>
+                            <td className="py-2 px-2 capitalize text-muted-foreground">
+                              {member.role.replace(/_/g, ' ')}
+                            </td>
+                            <td className="text-center py-2 px-2">{member.totalAssigned}</td>
+                            <td className="text-center py-2 px-2 text-green-600">{member.completed}</td>
+                            <td className="text-center py-2 px-2 text-blue-600">{member.inProgress}</td>
+                            <td className="text-center py-2 px-2 text-red-600">{member.overdue}</td>
+                            <td className="text-center py-2 px-2">
+                              <div className="flex items-center justify-center gap-2">
+                                <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                                  <div 
+                                    className={`h-full rounded-full ${
+                                      member.utilizationRate > 80 
+                                        ? 'bg-red-500' 
+                                        : member.utilizationRate > 50 
+                                          ? 'bg-yellow-500' 
+                                          : 'bg-green-500'
+                                    }`}
+                                    style={{ width: `${member.utilizationRate}%` }}
+                                  />
+                                </div>
+                                <span className={`text-xs font-medium ${
+                                  member.utilizationRate > 80 
+                                    ? 'text-red-600' 
+                                    : member.utilizationRate > 50 
+                                      ? 'text-yellow-600' 
+                                      : 'text-green-600'
+                                }`}>
+                                  {member.utilizationRate}%
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </>
           )}
           
           <div className="flex-1 overflow-y-auto py-4">

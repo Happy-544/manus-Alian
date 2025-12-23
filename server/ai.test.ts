@@ -113,7 +113,7 @@ describe("AI router", () => {
   });
 
   describe("ai.generateWeeklyReport", () => {
-    it("generates a comprehensive weekly report", async () => {
+    it("generates a comprehensive weekly report with resource allocation", async () => {
       const mockProject = {
         id: 1,
         name: "JGE Villa 45",
@@ -127,9 +127,10 @@ describe("AI router", () => {
         endDate: "2024-12-31",
       };
       const mockTasks = [
-        { id: 1, title: "Foundation work", status: "completed", priority: "high", dueDate: "2024-06-01", updatedAt: new Date() },
-        { id: 2, title: "Electrical wiring", status: "in_progress", priority: "medium", dueDate: "2024-12-01", updatedAt: new Date() },
-        { id: 3, title: "Plumbing", status: "todo", priority: "low", dueDate: "2024-01-01", updatedAt: new Date() },
+        { id: 1, title: "Foundation work", status: "completed", priority: "high", dueDate: "2024-06-01", updatedAt: new Date(), assigneeId: 1 },
+        { id: 2, title: "Electrical wiring", status: "in_progress", priority: "medium", dueDate: "2024-12-01", updatedAt: new Date(), assigneeId: 1 },
+        { id: 3, title: "Plumbing", status: "todo", priority: "low", dueDate: "2024-01-01", updatedAt: new Date(), assigneeId: 2 },
+        { id: 4, title: "Unassigned task", status: "todo", priority: "low", dueDate: "2024-12-01", updatedAt: new Date(), assigneeId: null },
       ];
       const mockMilestones = [
         { id: 1, name: "Phase 1 Complete", status: "completed", dueDate: "2024-06-01" },
@@ -140,8 +141,8 @@ describe("AI router", () => {
         { id: 2, amount: "200000", expenseDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000) },
       ];
       const mockMembers = [
-        { id: 1, role: "project_manager", userId: 1 },
-        { id: 2, role: "engineer", userId: 2 },
+        { id: 1, role: "project_manager", userId: 1, userName: "John Doe" },
+        { id: 2, role: "engineer", userId: 2, userName: "Jane Smith" },
       ];
 
       vi.mocked(db.getProjectById).mockResolvedValue(mockProject as any);
@@ -175,6 +176,19 @@ describe("AI router", () => {
       expect(result.metadata.tasksInProgress).toBeGreaterThanOrEqual(0);
       expect(result.metadata.overdueTasks).toBeGreaterThanOrEqual(0);
       expect(result.metadata.budgetUtilization).toBeGreaterThanOrEqual(0);
+      
+      // Check resource allocation metrics
+      expect(result.metadata.totalTeamMembers).toBe(2);
+      expect(result.metadata.avgUtilization).toBeGreaterThanOrEqual(0);
+      expect(result.metadata.unassignedTasks).toBe(1);
+      expect(result.metadata.resourceAllocation).toBeDefined();
+      expect(result.metadata.resourceAllocation.length).toBe(2);
+      
+      // Check individual resource allocation
+      const johnAllocation = result.metadata.resourceAllocation.find((r: any) => r.name === "John Doe");
+      expect(johnAllocation).toBeDefined();
+      expect(johnAllocation.totalAssigned).toBe(2);
+      expect(johnAllocation.role).toBe("project_manager");
     });
 
     it("throws error when project not found for weekly report", async () => {

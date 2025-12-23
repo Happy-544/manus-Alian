@@ -80,3 +80,10 @@
 - [x] Update AI Assistant UI with "Generate Weekly Report" button
 - [x] Add report preview/download functionality
 - [x] Unit tests for AI router including weekly report generation
+
+## Resource Allocation Enhancement
+- [x] Add resource allocation data collection to weekly report mutation
+- [x] Include team member workload and task distribution metrics
+- [x] Update LLM prompt with resource utilization section
+- [x] Update report dialog UI to display resource metrics
+- [x] Update unit tests for resource allocation

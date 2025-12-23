@@ -748,6 +748,52 @@ Provide:
         const today = new Date();
         const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
         
+        // ============ RESOURCE ALLOCATION CALCULATIONS ============
+        // Calculate task distribution per team member
+        const resourceAllocation = members.map((member: any) => {
+          const memberTasks = tasks.filter(t => t.assigneeId === member.userId);
+          const completedTasks = memberTasks.filter(t => t.status === 'completed');
+          const inProgressTasks = memberTasks.filter(t => t.status === 'in_progress');
+          const todoTasks = memberTasks.filter(t => t.status === 'todo');
+          const overdueMemberTasks = memberTasks.filter(t => 
+            t.dueDate && new Date(t.dueDate) < today && t.status !== 'completed'
+          );
+          const tasksCompletedThisWeekByMember = memberTasks.filter(t => 
+            t.status === 'completed' && t.updatedAt && new Date(t.updatedAt) >= weekAgo
+          );
+          
+          // Calculate utilization (tasks in progress + todo as percentage of capacity)
+          // Assume each member has capacity for 10 active tasks
+          const activeTaskCount = inProgressTasks.length + todoTasks.length;
+          const utilizationRate = Math.min((activeTaskCount / 10) * 100, 100);
+          
+          return {
+            userId: member.userId,
+            name: member.userName || 'Unknown',
+            role: member.role,
+            totalAssigned: memberTasks.length,
+            completed: completedTasks.length,
+            inProgress: inProgressTasks.length,
+            todo: todoTasks.length,
+            overdue: overdueMemberTasks.length,
+            completedThisWeek: tasksCompletedThisWeekByMember.length,
+            utilizationRate: Math.round(utilizationRate),
+          };
+        });
+        
+        // Calculate overall resource metrics
+        const totalTeamMembers = members.length;
+        const totalAssignedTasks = tasks.filter(t => t.assigneeId).length;
+        const unassignedTasks = tasks.filter(t => !t.assigneeId).length;
+        const avgTasksPerMember = totalTeamMembers > 0 ? Math.round(totalAssignedTasks / totalTeamMembers) : 0;
+        const avgUtilization = totalTeamMembers > 0 
+          ? Math.round(resourceAllocation.reduce((sum, r) => sum + r.utilizationRate, 0) / totalTeamMembers)
+          : 0;
+        
+        // Identify overloaded and underutilized members
+        const overloadedMembers = resourceAllocation.filter(r => r.utilizationRate > 80);
+        const underutilizedMembers = resourceAllocation.filter(r => r.utilizationRate < 30 && r.totalAssigned > 0);
+        
         // Filter tasks completed this week
         const tasksCompletedThisWeek = tasks.filter(t => 
           t.status === 'completed' && 
@@ -829,6 +875,22 @@ Use professional language suitable for stakeholders and clients.`,
 - Total Team Members: ${members.length}
 - Team Roles: ${members.map((m: any) => m.role).join(', ') || 'N/A'}
 
+**RESOURCE ALLOCATION & UTILIZATION:**
+- Total Assigned Tasks: ${totalAssignedTasks}
+- Unassigned Tasks: ${unassignedTasks}
+- Average Tasks per Member: ${avgTasksPerMember}
+- Average Team Utilization: ${avgUtilization}%
+- Overloaded Members (>80% utilization): ${overloadedMembers.length}
+- Underutilized Members (<30% utilization): ${underutilizedMembers.length}
+
+**Team Member Workload:**
+${resourceAllocation.map(r => `- ${r.name} (${r.role}): ${r.totalAssigned} tasks (${r.completed} done, ${r.inProgress} in progress, ${r.todo} pending, ${r.overdue} overdue) - ${r.utilizationRate}% utilized, ${r.completedThisWeek} completed this week`).join('\n') || '- No team members assigned'}
+
+**Resource Concerns:**
+${overloadedMembers.length > 0 ? `- Overloaded: ${overloadedMembers.map(r => r.name).join(', ')} - consider redistributing tasks` : '- No overloaded team members'}
+${underutilizedMembers.length > 0 ? `\n- Underutilized: ${underutilizedMembers.map(r => r.name).join(', ')} - available for additional assignments` : ''}
+${unassignedTasks > 0 ? `\n- ${unassignedTasks} tasks need to be assigned to team members` : ''}
+
 **TASK SUMMARY:**
 - Total Tasks: ${tasks.length}
 - Completed This Week: ${tasksCompletedThisWeek.length}
@@ -864,10 +926,11 @@ Please generate a professional weekly report with the following sections:
 1. **Executive Summary** (2-3 sentences overview)
 2. **Progress Highlights** (key accomplishments this week)
 3. **Work in Progress** (current activities)
-4. **Issues & Risks** (any concerns or blockers)
-5. **Financial Status** (budget health assessment)
-6. **Next Week's Priorities** (planned activities)
-7. **Recommendations** (actionable suggestions)
+4. **Resource Allocation & Utilization** (team workload analysis, identify overloaded/underutilized members, recommendations for task redistribution)
+5. **Issues & Risks** (any concerns or blockers, including resource-related risks)
+6. **Financial Status** (budget health assessment)
+7. **Next Week's Priorities** (planned activities)
+8. **Recommendations** (actionable suggestions including resource optimization)
 
 Format the report professionally with clear headings and bullet points where appropriate.`,
             },
@@ -888,6 +951,13 @@ Format the report professionally with clear headings and bullet points where app
             overdueTasks: overdueTasks.length,
             budgetUtilization: parseFloat(budgetUtilization),
             weeklySpending: weeklySpending,
+            // Resource allocation metrics
+            totalTeamMembers: totalTeamMembers,
+            avgUtilization: avgUtilization,
+            overloadedMembers: overloadedMembers.length,
+            underutilizedMembers: underutilizedMembers.length,
+            unassignedTasks: unassignedTasks,
+            resourceAllocation: resourceAllocation,
           }
         };
       }),
