@@ -730,6 +730,167 @@ Provide:
         const summaryContent = response.choices[0]?.message?.content;
         return { summary: typeof summaryContent === 'string' ? summaryContent : '' };
       }),
+    
+    generateWeeklyReport: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .mutation(async ({ input }) => {
+        const project = await db.getProjectById(input.projectId);
+        const tasks = await db.getTasksByProject(input.projectId);
+        const milestones = await db.getMilestonesByProject(input.projectId);
+        const expenses = await db.getExpensesByProject(input.projectId);
+        const members = await db.getProjectMembers(input.projectId);
+        
+        if (!project) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+        }
+        
+        // Calculate date range for this week
+        const today = new Date();
+        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        
+        // Filter tasks completed this week
+        const tasksCompletedThisWeek = tasks.filter(t => 
+          t.status === 'completed' && 
+          t.updatedAt && 
+          new Date(t.updatedAt) >= weekAgo
+        );
+        
+        // Filter tasks in progress
+        const tasksInProgress = tasks.filter(t => t.status === 'in_progress');
+        
+        // Filter overdue tasks
+        const overdueTasks = tasks.filter(t => 
+          t.dueDate && 
+          new Date(t.dueDate) < today && 
+          t.status !== 'completed'
+        );
+        
+        // Upcoming tasks (due in next 7 days)
+        const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const upcomingTasks = tasks.filter(t => 
+          t.dueDate && 
+          new Date(t.dueDate) >= today && 
+          new Date(t.dueDate) <= nextWeek &&
+          t.status !== 'completed'
+        );
+        
+        // Upcoming milestones
+        const upcomingMilestones = milestones.filter(m => 
+          m.dueDate && 
+          new Date(m.dueDate) >= today && 
+          new Date(m.dueDate) <= nextWeek &&
+          m.status !== 'completed'
+        );
+        
+        // Budget calculations
+        const totalBudget = parseFloat(project.budget || '0');
+        const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+        const budgetUtilization = totalBudget > 0 ? ((totalExpenses / totalBudget) * 100).toFixed(1) : '0';
+        const remainingBudget = totalBudget - totalExpenses;
+        
+        // Expenses this week
+        const expensesThisWeek = expenses.filter(e => 
+          e.expenseDate && new Date(e.expenseDate) >= weekAgo
+        );
+        const weeklySpending = expensesThisWeek.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+        
+        const reportDate = today.toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+        
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: 'system',
+              content: `You are a professional construction project manager creating a weekly progress report. 
+Generate a comprehensive, well-structured weekly report in Markdown format.
+Be specific with numbers and data provided. Include actionable insights and recommendations.
+Use professional language suitable for stakeholders and clients.`,
+            },
+            {
+              role: 'user',
+              content: `Generate a Weekly Progress Report for the following project:
+
+**REPORT DATE:** ${reportDate}
+**REPORTING PERIOD:** ${weekAgo.toLocaleDateString()} - ${today.toLocaleDateString()}
+
+**PROJECT INFORMATION:**
+- Project Name: ${project.name}
+- Client: ${project.clientName || 'N/A'}
+- Location: ${project.location || 'N/A'}
+- Current Status: ${project.status}
+- Overall Progress: ${project.progress}%
+- Project Timeline: ${project.startDate} to ${project.endDate}
+
+**TEAM:**
+- Total Team Members: ${members.length}
+- Team Roles: ${members.map((m: any) => m.role).join(', ') || 'N/A'}
+
+**TASK SUMMARY:**
+- Total Tasks: ${tasks.length}
+- Completed This Week: ${tasksCompletedThisWeek.length}
+- Currently In Progress: ${tasksInProgress.length}
+- Overdue Tasks: ${overdueTasks.length}
+- Tasks Due Next Week: ${upcomingTasks.length}
+
+**Tasks Completed This Week:**
+${tasksCompletedThisWeek.map(t => `- ${t.title}`).join('\n') || '- None'}
+
+**Tasks In Progress:**
+${tasksInProgress.slice(0, 5).map(t => `- ${t.title} (${t.priority} priority)`).join('\n') || '- None'}
+
+**Overdue Tasks (Attention Required):**
+${overdueTasks.map(t => `- ${t.title} (Due: ${t.dueDate})`).join('\n') || '- None'}
+
+**MILESTONE STATUS:**
+- Total Milestones: ${milestones.length}
+- Completed: ${milestones.filter(m => m.status === 'completed').length}
+- Upcoming This Week: ${upcomingMilestones.length}
+
+**Upcoming Milestones:**
+${upcomingMilestones.map(m => `- ${m.name} (Due: ${m.dueDate})`).join('\n') || '- None in the next 7 days'}
+
+**FINANCIAL SUMMARY:**
+- Total Budget: ${project.currency} ${totalBudget.toLocaleString()}
+- Total Spent: ${project.currency} ${totalExpenses.toLocaleString()}
+- Remaining Budget: ${project.currency} ${remainingBudget.toLocaleString()}
+- Budget Utilization: ${budgetUtilization}%
+- Spending This Week: ${project.currency} ${weeklySpending.toLocaleString()}
+
+Please generate a professional weekly report with the following sections:
+1. **Executive Summary** (2-3 sentences overview)
+2. **Progress Highlights** (key accomplishments this week)
+3. **Work in Progress** (current activities)
+4. **Issues & Risks** (any concerns or blockers)
+5. **Financial Status** (budget health assessment)
+6. **Next Week's Priorities** (planned activities)
+7. **Recommendations** (actionable suggestions)
+
+Format the report professionally with clear headings and bullet points where appropriate.`,
+            },
+          ],
+        });
+        
+        const reportContent = response.choices[0]?.message?.content;
+        
+        return { 
+          report: typeof reportContent === 'string' ? reportContent : 'Unable to generate report',
+          metadata: {
+            projectName: project.name,
+            reportDate: reportDate,
+            periodStart: weekAgo.toISOString(),
+            periodEnd: today.toISOString(),
+            tasksCompleted: tasksCompletedThisWeek.length,
+            tasksInProgress: tasksInProgress.length,
+            overdueTasks: overdueTasks.length,
+            budgetUtilization: parseFloat(budgetUtilization),
+            weeklySpending: weeklySpending,
+          }
+        };
+      }),
   }),
 });
 

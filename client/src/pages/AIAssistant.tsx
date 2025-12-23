@@ -8,16 +8,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { trpc } from "@/lib/trpc";
 import {
   Bot,
+  Calendar,
+  CheckCircle2,
+  ClipboardList,
+  Download,
   FileText,
-  Lightbulb,
   RefreshCw,
   Send,
   Sparkles,
   TrendingUp,
+  AlertTriangle,
+  DollarSign,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
@@ -27,6 +39,19 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  type?: "chat" | "summary" | "report";
+}
+
+interface ReportMetadata {
+  projectName: string;
+  reportDate: string;
+  periodStart: string;
+  periodEnd: string;
+  tasksCompleted: number;
+  tasksInProgress: number;
+  overdueTasks: number;
+  budgetUtilization: number;
+  weeklySpending: number;
 }
 
 export default function AIAssistant() {
@@ -34,6 +59,9 @@ export default function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [currentReport, setCurrentReport] = useState<string>("");
+  const [reportMetadata, setReportMetadata] = useState<ReportMetadata | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { data: projects } = trpc.projects.list.useQuery();
@@ -50,12 +78,36 @@ export default function AIAssistant() {
           role: "assistant",
           content: data.summary,
           timestamp: new Date(),
+          type: "summary",
         },
       ]);
       setIsLoading(false);
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to generate summary");
+      setIsLoading(false);
+    },
+  });
+
+  const generateWeeklyReport = trpc.ai.generateWeeklyReport.useMutation({
+    onSuccess: (data: any) => {
+      setCurrentReport(data.report);
+      setReportMetadata(data.metadata);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `📊 **Weekly Progress Report Generated**\n\nI've generated a comprehensive weekly report for **${data.metadata.projectName}**.\n\n**Report Highlights:**\n- Tasks Completed This Week: ${data.metadata.tasksCompleted}\n- Tasks In Progress: ${data.metadata.tasksInProgress}\n- Overdue Tasks: ${data.metadata.overdueTasks}\n- Budget Utilization: ${data.metadata.budgetUtilization}%\n\nClick "View Full Report" to see the complete report or download it.`,
+          timestamp: new Date(),
+          type: "report",
+        },
+      ]);
+      setShowReportDialog(true);
+      setIsLoading(false);
+      toast.success("Weekly report generated successfully!");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to generate weekly report");
       setIsLoading(false);
     },
   });
@@ -68,6 +120,7 @@ export default function AIAssistant() {
           role: "assistant",
           content: data.message,
           timestamp: new Date(),
+          type: "chat",
         },
       ]);
       setIsLoading(false);
@@ -122,12 +175,53 @@ export default function AIAssistant() {
     generateSummary.mutate({ projectId: parseInt(selectedProjectId) });
   };
 
+  const handleGenerateWeeklyReport = () => {
+    if (!selectedProjectId) {
+      toast.error("Please select a project first");
+      return;
+    }
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "user",
+        content: "Generate a weekly progress report",
+        timestamp: new Date(),
+      },
+    ]);
+    setIsLoading(true);
+    generateWeeklyReport.mutate({ projectId: parseInt(selectedProjectId) });
+  };
+
+  const handleDownloadReport = () => {
+    if (!currentReport || !reportMetadata) return;
+    
+    const blob = new Blob([currentReport], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `weekly-report-${reportMetadata.projectName.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().split("T")[0]}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Report downloaded successfully!");
+  };
+
   const quickActions = [
     {
       icon: FileText,
       label: "Generate Summary",
       description: "Create a project summary",
       action: handleGenerateSummary,
+      color: "text-blue-500",
+    },
+    {
+      icon: ClipboardList,
+      label: "Weekly Report",
+      description: "Generate weekly progress report",
+      action: handleGenerateWeeklyReport,
+      color: "text-green-500",
+      highlight: true,
     },
   ];
 
@@ -141,7 +235,7 @@ export default function AIAssistant() {
             AI Assistant
           </h2>
           <p className="text-muted-foreground">
-            Get AI-powered insights and updates for your projects
+            Get AI-powered insights, summaries, and weekly reports for your projects
           </p>
         </div>
         <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
@@ -181,15 +275,15 @@ export default function AIAssistant() {
                 {quickActions.map((action, index) => (
                   <Button
                     key={index}
-                    variant="outline"
-                    className="w-full justify-start h-auto py-3"
+                    variant={action.highlight ? "default" : "outline"}
+                    className={`w-full justify-start h-auto py-3 ${action.highlight ? "bg-primary hover:bg-primary/90" : ""}`}
                     onClick={action.action}
                     disabled={isLoading}
                   >
-                    <action.icon className="h-4 w-4 mr-2 shrink-0" />
+                    <action.icon className={`h-4 w-4 mr-2 shrink-0 ${action.highlight ? "text-primary-foreground" : action.color}`} />
                     <div className="text-left">
                       <p className="font-medium">{action.label}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className={`text-xs ${action.highlight ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                         {action.description}
                       </p>
                     </div>
@@ -221,6 +315,19 @@ export default function AIAssistant() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Report History Hint */}
+            <Card className="bg-muted/50">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <div className="text-xs text-muted-foreground">
+                    <p className="font-medium mb-1">Weekly Reports</p>
+                    <p>Generate comprehensive progress reports with task summaries, budget analysis, and AI recommendations.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Chat Area */}
@@ -235,6 +342,16 @@ export default function AIAssistant() {
                     <p className="text-sm">
                       Ask questions about your project or use quick actions
                     </p>
+                    <div className="mt-4 flex gap-2">
+                      <Badge variant="outline" className="cursor-pointer hover:bg-muted" onClick={handleGenerateSummary}>
+                        <FileText className="h-3 w-3 mr-1" />
+                        Summary
+                      </Badge>
+                      <Badge variant="outline" className="cursor-pointer hover:bg-muted bg-primary/10 border-primary/30" onClick={handleGenerateWeeklyReport}>
+                        <ClipboardList className="h-3 w-3 mr-1" />
+                        Weekly Report
+                      </Badge>
+                    </div>
                   </div>
                 ) : (
                   messages.map((message, index) => (
@@ -252,7 +369,29 @@ export default function AIAssistant() {
                         }`}
                       >
                         {message.role === "assistant" ? (
-                          <Streamdown>{message.content}</Streamdown>
+                          <>
+                            <Streamdown>{message.content}</Streamdown>
+                            {message.type === "report" && (
+                              <div className="mt-3 flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => setShowReportDialog(true)}
+                                >
+                                  <FileText className="h-3 w-3 mr-1" />
+                                  View Full Report
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={handleDownloadReport}
+                                >
+                                  <Download className="h-3 w-3 mr-1" />
+                                  Download
+                                </Button>
+                              </div>
+                            )}
+                          </>
                         ) : (
                           <p>{message.content}</p>
                         )}
@@ -274,7 +413,11 @@ export default function AIAssistant() {
                     <div className="bg-muted rounded-lg p-3">
                       <div className="flex items-center gap-2">
                         <RefreshCw className="h-4 w-4 animate-spin" />
-                        <span className="text-sm">Thinking...</span>
+                        <span className="text-sm">
+                          {generateWeeklyReport.isPending
+                            ? "Generating weekly report..."
+                            : "Thinking..."}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -307,6 +450,74 @@ export default function AIAssistant() {
           </Card>
         </div>
       )}
+
+      {/* Weekly Report Dialog */}
+      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardList className="h-5 w-5 text-primary" />
+              Weekly Progress Report
+              {reportMetadata && (
+                <Badge variant="outline" className="ml-2">
+                  {reportMetadata.reportDate}
+                </Badge>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {reportMetadata && (
+            <div className="grid grid-cols-4 gap-4 py-4 border-b">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-green-600 mb-1">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span className="text-2xl font-bold">{reportMetadata.tasksCompleted}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Tasks Completed</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-blue-600 mb-1">
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="text-2xl font-bold">{reportMetadata.tasksInProgress}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">In Progress</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-amber-600 mb-1">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span className="text-2xl font-bold">{reportMetadata.overdueTasks}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Overdue</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-purple-600 mb-1">
+                  <DollarSign className="h-4 w-4" />
+                  <span className="text-2xl font-bold">{reportMetadata.budgetUtilization}%</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Budget Used</p>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex-1 overflow-y-auto py-4">
+            <div className="prose prose-sm max-w-none dark:prose-invert">
+              <Streamdown>{currentReport}</Streamdown>
+            </div>
+          </div>
+          
+          <Separator />
+          
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => setShowReportDialog(false)}>
+              Close
+            </Button>
+            <Button onClick={handleDownloadReport}>
+              <Download className="h-4 w-4 mr-2" />
+              Download Report
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

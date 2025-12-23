@@ -73,3 +73,10 @@
 - [x] Unit tests for tasks router
 - [x] Unit tests for auth logout
 
+
+## Weekly Report Generation Enhancement
+- [x] Add generateWeeklyReport mutation to AI router
+- [x] Create comprehensive report format (status, tasks, budget, milestones, recommendations)
+- [x] Update AI Assistant UI with "Generate Weekly Report" button
+- [x] Add report preview/download functionality
+- [x] Unit tests for AI router including weekly report generation
