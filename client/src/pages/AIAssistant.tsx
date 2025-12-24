@@ -356,7 +356,7 @@ export default function AIAssistant() {
 
           {/* Chat Area */}
           <Card className="flex-1 flex flex-col min-h-0">
-            <CardContent className="flex-1 flex flex-col p-4 min-h-0">
+            <CardContent className="flex-1 flex flex-col p-4 min-h-0" style={{paddingTop: '22px', paddingRight: '30px', paddingBottom: '30px', paddingLeft: '30px'}}>
               {/* Messages */}
               <div className="flex-1 overflow-y-auto space-y-4 mb-4">
                 {messages.length === 0 ? (
