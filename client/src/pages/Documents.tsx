@@ -106,6 +106,27 @@ export default function Documents() {
     },
   });
 
+  const [isGenerationOpen, setIsGenerationOpen] = useState(false);
+  const [generationData, setGenerationData] = useState({
+    boqContent: "",
+    drawingsDescription: "",
+    missingInfo: {} as Record<string, string>,
+  });
+  const [generationStatus, setGenerationStatus] = useState<"idle" | "generating" | "completed" | "error">("idle");
+  const [generatedContent, setGeneratedContent] = useState("");
+
+  const generateDocuments = trpc.documentGeneration.generateComprehensive.useMutation({
+    onSuccess: (result) => {
+      setGeneratedContent(result.content);
+      setGenerationStatus("completed");
+      toast.success("Documents generated successfully!");
+    },
+    onError: (error) => {
+      setGenerationStatus("error");
+      toast.error(error.message || "Failed to generate documents");
+    },
+  });
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -206,10 +227,16 @@ export default function Documents() {
             </SelectContent>
           </Select>
           {selectedProjectId && (
-            <Button onClick={() => setIsUploadOpen(true)}>
-              <Upload className="mr-2 h-4 w-4" />
-              Upload
-            </Button>
+            <>
+              <Button onClick={() => setIsUploadOpen(true)}>
+                <Upload className="mr-2 h-4 w-4" />
+                Upload
+              </Button>
+              <Button onClick={() => setIsGenerationOpen(true)} variant="outline">
+                <Plus className="mr-2 h-4 w-4" />
+                AI Generate
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -448,6 +475,97 @@ export default function Documents() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Document Generation Dialog */}
+      <Dialog open={isGenerationOpen} onOpenChange={setIsGenerationOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>AI Document Generation</DialogTitle>
+            <DialogDescription>
+              Generate comprehensive project documentation from BOQ and drawings using Dubai market data
+            </DialogDescription>
+          </DialogHeader>
+          {generationStatus === "completed" ? (
+            <div className="space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h3 className="font-semibold text-green-900 mb-2">✓ Documents Generated Successfully</h3>
+                <p className="text-sm text-green-700">Your comprehensive project documentation has been created based on Dubai market data and project requirements.</p>
+              </div>
+              <div className="max-h-96 overflow-y-auto bg-slate-50 p-4 rounded-lg border">
+                <pre className="text-xs whitespace-pre-wrap font-mono">{generatedContent}</pre>
+              </div>
+              <Button onClick={() => {
+                setIsGenerationOpen(false);
+                setGenerationStatus("idle");
+                setGeneratedContent("");
+              }} className="w-full">
+                Close
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setGenerationStatus("generating");
+              generateDocuments.mutate({
+                projectId: parseInt(selectedProjectId),
+                boqContent: generationData.boqContent,
+                drawingsDescription: generationData.drawingsDescription,
+                missingInfo: generationData.missingInfo,
+              });
+            }}>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="boq">Bill of Quantities (BOQ)</Label>
+                  <Textarea
+                    id="boq"
+                    placeholder="Paste your BOQ content here or describe the materials and equipment needed..."
+                    value={generationData.boqContent}
+                    onChange={(e) => setGenerationData({ ...generationData, boqContent: e.target.value })}
+                    className="min-h-24"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="drawings">Drawings Description</Label>
+                  <Textarea
+                    id="drawings"
+                    placeholder="Describe the project drawings, layouts, and specifications..."
+                    value={generationData.drawingsDescription}
+                    onChange={(e) => setGenerationData({ ...generationData, drawingsDescription: e.target.value })}
+                    className="min-h-24"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="missing">Missing Information (Optional)</Label>
+                  <Textarea
+                    id="missing"
+                    placeholder="List any missing information or special requirements for the AI to consider..."
+                    value={JSON.stringify(generationData.missingInfo, null, 2)}
+                    onChange={(e) => {
+                      try {
+                        const parsed = JSON.parse(e.target.value);
+                        setGenerationData({ ...generationData, missingInfo: parsed });
+                      } catch {
+                        // Keep as is if not valid JSON
+                      }
+                    }}
+                    className="min-h-20 font-mono text-xs"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsGenerationOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={generateDocuments.isPending || generationStatus === "generating"}>
+                  {generationStatus === "generating" ? "Generating..." : "Generate Documents"}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>
