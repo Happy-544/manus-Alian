@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, json } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, json, longtext } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -503,3 +503,71 @@ export const ffeList = mysqlTable("ffe_list", {
 
 export type FFEListItem = typeof ffeList.$inferSelect;
 export type InsertFFEListItem = typeof ffeList.$inferInsert;
+
+
+/**
+ * Document Generation table - stores BOQ, Drawings, and generated project documents
+ */
+export const documentGenerations = mysqlTable("documentGenerations", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  documentType: mysqlEnum("documentType", ["boq", "drawings", "baseline", "procurement_log", "engineering_log", "budget_estimation", "value_engineering", "other"]).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  sourceDocumentIds: text("sourceDocumentIds"), // JSON array of document IDs used for generation
+  generatedContent: text("generatedContent"), // Full generated document content
+  status: mysqlEnum("status", ["pending", "generating", "completed", "failed"]).default("pending").notNull(),
+  errorMessage: text("errorMessage"),
+  marketDataUsed: text("marketDataUsed"), // JSON object with Dubai market data used
+  generationPrompt: text("generationPrompt"), // The prompt used for generation
+  missingInformation: text("missingInformation"), // JSON array of missing info requested from user
+  generatedAt: timestamp("generatedAt"),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DocumentGeneration = typeof documentGenerations.$inferSelect;
+export type InsertDocumentGeneration = typeof documentGenerations.$inferInsert;
+
+/**
+ * Dubai Market Data table - stores construction market rates and pricing
+ */
+export const dubaiMarketData = mysqlTable("dubaiMarketData", {
+  id: int("id").autoincrement().primaryKey(),
+  category: varchar("category", { length: 100 }).notNull(), // e.g., "labor", "materials", "equipment", "services"
+  itemName: varchar("itemName", { length: 255 }).notNull(),
+  unit: varchar("unit", { length: 50 }).notNull(),
+  averagePrice: decimal("averagePrice", { precision: 10, scale: 2 }).notNull(),
+  priceRange: varchar("priceRange", { length: 100 }), // e.g., "100-150"
+  supplier: varchar("supplier", { length: 255 }),
+  lastUpdated: timestamp("lastUpdated").defaultNow(),
+  dataSource: varchar("dataSource", { length: 255 }), // e.g., "market_survey", "supplier_quote", "historical"
+  marketPeriod: varchar("marketPeriod", { length: 50 }), // e.g., "Q4-2025"
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DubaiMarketData = typeof dubaiMarketData.$inferSelect;
+export type InsertDubaiMarketData = typeof dubaiMarketData.$inferInsert;
+
+/**
+ * Generated Document Artifacts table - stores individual generated documents
+ */
+export const generatedArtifacts = mysqlTable("generatedArtifacts", {
+  id: int("id").autoincrement().primaryKey(),
+  generationId: int("generationId").notNull(),
+  projectId: int("projectId").notNull(),
+  artifactType: varchar("artifactType", { length: 100 }).notNull(), // e.g., "baseline_schedule", "procurement_item", "budget_line"
+  artifactData: text("artifactData"), // JSON data for the artifact
+  linkedEntityId: int("linkedEntityId"), // Link to actual entity (e.g., baseline ID, procurement item ID)
+  linkedEntityType: varchar("linkedEntityType", { length: 100 }), // e.g., "baseline", "procurement_item", "budget_item"
+  status: mysqlEnum("status", ["generated", "reviewed", "approved", "rejected", "applied"]).default("generated").notNull(),
+  reviewNotes: text("reviewNotes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type GeneratedArtifact = typeof generatedArtifacts.$inferSelect;
+export type InsertGeneratedArtifact = typeof generatedArtifacts.$inferInsert;

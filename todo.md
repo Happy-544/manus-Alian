@@ -128,3 +128,16 @@
 - [x] Add navigation links in sidebar
 - [x] Update dashboard to show Material and FF&E statistics
 - [x] Write unit tests for Material and FF&E routers
+
+## AI Document Generation Feature (BOQ, Drawings, Project Documentation)
+- [ ] Add document generation database schema
+- [ ] Create tRPC routers for document generation and market data
+- [ ] Update Documents page with BOQ/Drawings upload capability
+- [ ] Implement AI generation for Initial Baseline Program
+- [ ] Implement AI generation for Initial Procurement Log
+- [ ] Implement AI generation for Engineering Log
+- [ ] Implement AI generation for Budget Estimation
+- [ ] Implement AI generation for Value Engineering recommendations
+- [ ] Integrate Dubai market data and pricing intelligence
+- [ ] Add generation progress tracking and status updates
+- [ ] Write unit tests for document generation features

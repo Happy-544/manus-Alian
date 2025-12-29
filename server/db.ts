@@ -23,7 +23,10 @@ import {
   scheduleVariances, InsertScheduleVariance,
   progressSnapshots, InsertProgressSnapshot,
   materialList, InsertMaterialListItem, MaterialListItem,
-  ffeList, InsertFFEListItem, FFEListItem
+  ffeList, InsertFFEListItem, FFEListItem,
+  documentGenerations, InsertDocumentGeneration, DocumentGeneration,
+  dubaiMarketData, InsertDubaiMarketData, DubaiMarketData,
+  generatedArtifacts, InsertGeneratedArtifact, GeneratedArtifact
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -956,4 +959,101 @@ export async function deleteFFEItem(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(ffeList).where(eq(ffeList.id, id));
+}
+
+
+// ============ DOCUMENT GENERATION QUERIES ============
+export async function createDocumentGeneration(doc: InsertDocumentGeneration) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(documentGenerations).values(doc);
+  return result[0].insertId;
+}
+
+export async function updateDocumentGeneration(id: number, doc: Partial<InsertDocumentGeneration>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(documentGenerations).set(doc).where(eq(documentGenerations.id, id));
+}
+
+export async function getDocumentGenerationsByProject(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(documentGenerations)
+    .where(eq(documentGenerations.projectId, projectId))
+    .orderBy(desc(documentGenerations.createdAt));
+}
+
+export async function getDocumentGenerationById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(documentGenerations)
+    .where(eq(documentGenerations.id, id))
+    .limit(1);
+  return result[0];
+}
+
+export async function deleteDocumentGeneration(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(documentGenerations).where(eq(documentGenerations.id, id));
+}
+
+// ============ DUBAI MARKET DATA QUERIES ============
+export async function createMarketData(data: InsertDubaiMarketData) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(dubaiMarketData).values(data);
+  return result[0].insertId;
+}
+
+export async function getMarketDataByCategory(category: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(dubaiMarketData)
+    .where(eq(dubaiMarketData.category, category))
+    .orderBy(desc(dubaiMarketData.lastUpdated));
+}
+
+export async function getMarketDataByItem(itemName: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(dubaiMarketData)
+    .where(like(dubaiMarketData.itemName, `%${itemName}%`))
+    .orderBy(desc(dubaiMarketData.lastUpdated));
+}
+
+export async function getAllMarketData() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(dubaiMarketData)
+    .orderBy(dubaiMarketData.category, dubaiMarketData.itemName);
+}
+
+// ============ GENERATED ARTIFACTS QUERIES ============
+export async function createGeneratedArtifact(artifact: InsertGeneratedArtifact) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(generatedArtifacts).values(artifact);
+  return result[0].insertId;
+}
+
+export async function getGeneratedArtifactsByGeneration(generationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(generatedArtifacts)
+    .where(eq(generatedArtifacts.generationId, generationId))
+    .orderBy(generatedArtifacts.artifactType);
+}
+
+export async function updateGeneratedArtifact(id: number, artifact: Partial<InsertGeneratedArtifact>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(generatedArtifacts).set(artifact).where(eq(generatedArtifacts.id, id));
+}
+
+export async function deleteGeneratedArtifact(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(generatedArtifacts).where(eq(generatedArtifacts.id, id));
 }

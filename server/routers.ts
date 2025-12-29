@@ -2015,7 +2015,131 @@ Provide:
         await db.deleteFFEItem(input.id);
         return { success: true };
       }),
+   }),
+
+  documentGeneration: router({
+    create: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        documentType: z.enum(['boq', 'drawings', 'baseline', 'procurement_log', 'engineering_log', 'budget_estimation', 'value_engineering', 'other']),
+        title: z.string(),
+        description: z.string().optional(),
+        sourceDocumentIds: z.string().optional(),
+        missingInformation: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const id = await db.createDocumentGeneration({
+          projectId: input.projectId,
+          documentType: input.documentType,
+          title: input.title,
+          description: input.description,
+          sourceDocumentIds: input.sourceDocumentIds,
+          status: 'pending',
+          createdById: ctx.user.id,
+          missingInformation: input.missingInformation,
+        });
+        return { id };
+      }),
+    
+    list: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getDocumentGenerationsByProject(input.projectId);
+      }),
+    
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getDocumentGenerationById(input.id);
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteDocumentGeneration(input.id);
+        return { success: true };
+      }),
+    
+    generateComprehensive: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        boqContent: z.string().optional(),
+        drawingsDescription: z.string().optional(),
+        missingInfo: z.record(z.string(), z.any()).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const project = await db.getProjectById(input.projectId);
+        if (!project) throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+        
+        const marketData = await db.getAllMarketData();
+        const marketSummary = marketData.slice(0, 20).map(m => `${m.itemName}: ${m.averagePrice} ${m.unit}`).join(', ');
+        
+        const prompt = `You are a professional fit-out project consultant in Dubai. Based on the following project information and Dubai market data, generate comprehensive project documentation.
+
+Project: ${project.name}
+Location: ${project.location}
+Budget: ${project.budget}
+Description: ${project.description}
+
+BOQ Content: ${input.boqContent || 'Not provided'}
+Drawings Description: ${input.drawingsDescription || 'Not provided'}
+Missing Information: ${JSON.stringify(input.missingInfo || {})}
+
+Dubai Market Data Sample: ${marketSummary}
+
+Generate a comprehensive project plan including:
+1. Initial Baseline Program (schedule)
+2. Initial Procurement Log (materials and vendors)
+3. Engineering Log (technical specifications)
+4. Budget Estimation (detailed breakdown)
+5. Value Engineering (cost optimization recommendations)
+6. Risk Assessment
+
+Provide detailed, actionable recommendations based on Dubai market conditions and best practices.`;
+        
+        const response = await invokeLLM({
+          messages: [
+            { role: 'system', content: 'You are an expert fit-out project manager in Dubai with deep knowledge of local market, regulations, and best practices.' },
+            { role: 'user', content: prompt }
+          ],
+        });
+        
+        const content = response.choices[0]?.message?.content;
+        const generatedContent = typeof content === 'string' ? content : '';
+        
+        const docId = await db.createDocumentGeneration({
+          projectId: input.projectId,
+          documentType: 'other',
+          title: `Comprehensive Project Documentation - ${new Date().toLocaleDateString()}`,
+          description: 'AI-generated comprehensive project documentation based on BOQ and market analysis',
+          generatedContent: generatedContent,
+          status: 'completed',
+          createdById: ctx.user.id,
+          marketDataUsed: JSON.stringify({ count: marketData.length, sample: marketSummary }),
+          generationPrompt: prompt,
+        });
+        
+        return { id: docId, content: generatedContent };
+      }),
+  }),
+
+  marketData: router({
+    getByCategory: protectedProcedure
+      .input(z.object({ category: z.string() }))
+      .query(async ({ input }) => {
+        return db.getMarketDataByCategory(input.category);
+      }),
+    
+    getAll: protectedProcedure
+      .query(async () => {
+        return db.getAllMarketData();
+      }),
+    
+    search: protectedProcedure
+      .input(z.object({ itemName: z.string() }))
+      .query(async ({ input }) => {
+        return db.getMarketDataByItem(input.itemName);
+      }),
   }),
 });
-
 export type AppRouter = typeof appRouter;
