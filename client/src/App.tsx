@@ -18,6 +18,8 @@ import Team from "./pages/Team";
 import Timeline from "./pages/Timeline";
 import Procurement from "./pages/Procurement";
 import Baseline from "./pages/Baseline";
+import Materials from "./pages/Materials";
+import FFE from "./pages/FFE";
 
 function Router() {
   return (
@@ -30,6 +32,8 @@ function Router() {
         <Route path="/timeline" component={Timeline} />
         <Route path="/procurement" component={Procurement} />
         <Route path="/baseline" component={Baseline} />
+        <Route path="/materials" component={Materials} />
+        <Route path="/ffe" component={FFE} />
         <Route path="/budget" component={Budget} />
         <Route path="/documents" component={Documents} />
         <Route path="/team" component={Team} />

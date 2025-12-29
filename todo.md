@@ -116,3 +116,15 @@
 - [x] Add AI mutation to suggest alternative vendors based on price and availability
 - [x] Update Procurement UI with vendor suggestion button and dialog
 - [x] Add vendor comparison display with price/availability metrics
+
+## Material List & FF&E List Features
+- [x] Add Material List database schema
+- [x] Add FF&E List database schema
+- [x] Create tRPC routers for Material and FF&E CRUD operations
+- [x] Build Material List UI page with add/edit/delete functionality
+- [x] Build FF&E List UI page with add/edit/delete functionality
+- [x] Add integration to create procurement items from Material List
+- [x] Add integration to create procurement items from FF&E List
+- [x] Add navigation links in sidebar
+- [x] Update dashboard to show Material and FF&E statistics
+- [x] Write unit tests for Material and FF&E routers

@@ -42,6 +42,8 @@ import {
   Users,
   Package,
   Target,
+  Sofa,
+  Hammer,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -54,6 +56,8 @@ const menuItems = [
   { icon: ClipboardList, label: "Tasks", path: "/tasks" },
   { icon: Calendar, label: "Timeline", path: "/timeline" },
   { icon: Package, label: "Procurement", path: "/procurement" },
+  { icon: Hammer, label: "Materials", path: "/materials" },
+  { icon: Sofa, label: "FF&E", path: "/ffe" },
   { icon: Target, label: "Baseline", path: "/baseline" },
   { icon: DollarSign, label: "Budget", path: "/budget" },
   { icon: FileText, label: "Documents", path: "/documents" },

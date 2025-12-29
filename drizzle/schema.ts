@@ -445,3 +445,61 @@ export const progressSnapshots = mysqlTable("progress_snapshots", {
 
 export type ProgressSnapshot = typeof progressSnapshots.$inferSelect;
 export type InsertProgressSnapshot = typeof progressSnapshots.$inferInsert;
+
+
+/**
+ * Material List - tracking construction materials for projects
+ */
+export const materialList = mysqlTable("material_list", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 100 }).notNull(), // e.g., "concrete", "steel", "paint", "electrical"
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unit: varchar("unit", { length: 50 }).notNull(), // e.g., "kg", "m3", "liters", "pieces"
+  estimatedUnitCost: decimal("estimatedUnitCost", { precision: 10, scale: 2 }),
+  totalEstimatedCost: decimal("totalEstimatedCost", { precision: 15, scale: 2 }),
+  supplier: varchar("supplier", { length: 255 }),
+  specificationNotes: text("specificationNotes"),
+  requiredDate: timestamp("requiredDate"),
+  status: mysqlEnum("status", ["pending", "ordered", "delivered", "used", "cancelled"]).default("pending").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "critical"]).default("medium").notNull(),
+  linkedProcurementItemId: int("linkedProcurementItemId"), // Link to procurement item
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MaterialListItem = typeof materialList.$inferSelect;
+export type InsertMaterialListItem = typeof materialList.$inferInsert;
+
+/**
+ * FF&E List - tracking furniture, fixtures & equipment for projects
+ */
+export const ffeList = mysqlTable("ffe_list", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 100 }).notNull(), // e.g., "furniture", "fixtures", "equipment", "appliances"
+  type: varchar("type", { length: 100 }), // e.g., "sofa", "lighting", "HVAC", "kitchen appliance"
+  quantity: int("quantity").notNull(),
+  unit: varchar("unit", { length: 50 }).default("piece"),
+  estimatedUnitCost: decimal("estimatedUnitCost", { precision: 10, scale: 2 }),
+  totalEstimatedCost: decimal("totalEstimatedCost", { precision: 15, scale: 2 }),
+  manufacturer: varchar("manufacturer", { length: 255 }),
+  modelNumber: varchar("modelNumber", { length: 100 }),
+  specificationNotes: text("specificationNotes"),
+  installationNotes: text("installationNotes"),
+  requiredDate: timestamp("requiredDate"),
+  status: mysqlEnum("status", ["pending", "ordered", "delivered", "installed", "cancelled"]).default("pending").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "critical"]).default("medium").notNull(),
+  linkedProcurementItemId: int("linkedProcurementItemId"), // Link to procurement item
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type FFEListItem = typeof ffeList.$inferSelect;
+export type InsertFFEListItem = typeof ffeList.$inferInsert;

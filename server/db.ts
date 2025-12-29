@@ -21,7 +21,9 @@ import {
   projectBaselines, InsertProjectBaseline,
   baselineTasks, InsertBaselineTask,
   scheduleVariances, InsertScheduleVariance,
-  progressSnapshots, InsertProgressSnapshot
+  progressSnapshots, InsertProgressSnapshot,
+  materialList, InsertMaterialListItem, MaterialListItem,
+  ffeList, InsertFFEListItem, FFEListItem
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -887,4 +889,71 @@ export async function getLatestProgressSnapshot(projectId: number) {
     .orderBy(desc(progressSnapshots.snapshotDate))
     .limit(1);
   return result[0];
+}
+
+
+// ============ MATERIAL LIST QUERIES ============
+export async function createMaterialItem(item: InsertMaterialListItem) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(materialList).values(item);
+  return result[0].insertId;
+}
+
+export async function getMaterialItems(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(materialList).where(eq(materialList.projectId, projectId)).orderBy(materialList.createdAt);
+}
+
+export async function getMaterialItemById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(materialList).where(eq(materialList.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function updateMaterialItem(id: number, updates: Partial<InsertMaterialListItem>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(materialList).set(updates).where(eq(materialList.id, id));
+}
+
+export async function deleteMaterialItem(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(materialList).where(eq(materialList.id, id));
+}
+
+// ============ FF&E LIST QUERIES ============
+export async function createFFEItem(item: InsertFFEListItem) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(ffeList).values(item);
+  return result[0].insertId;
+}
+
+export async function getFFEItems(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(ffeList).where(eq(ffeList.projectId, projectId)).orderBy(ffeList.createdAt);
+}
+
+export async function getFFEItemById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(ffeList).where(eq(ffeList.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function updateFFEItem(id: number, updates: Partial<InsertFFEListItem>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(ffeList).set(updates).where(eq(ffeList.id, id));
+}
+
+export async function deleteFFEItem(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(ffeList).where(eq(ffeList.id, id));
 }

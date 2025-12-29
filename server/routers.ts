@@ -1846,6 +1846,176 @@ Provide:
         return { analysis: typeof content === 'string' ? content : '' };
       }),
   }),
+
+  // Material List Router
+  materials: router({
+    list: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getMaterialItems(input.projectId);
+      }),
+    
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getMaterialItemById(input.id);
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        name: z.string(),
+        description: z.string().optional(),
+        category: z.string(),
+        quantity: z.number(),
+        unit: z.string(),
+        estimatedUnitCost: z.number().optional(),
+        totalEstimatedCost: z.number().optional(),
+        supplier: z.string().optional(),
+        specificationNotes: z.string().optional(),
+        requiredDate: z.date().optional(),
+        status: z.enum(['pending', 'ordered', 'delivered', 'used', 'cancelled']).default('pending'),
+        priority: z.enum(['low', 'medium', 'high', 'critical']).default('medium'),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Convert numeric fields to strings for database storage
+        const dbInput: any = { ...input, createdById: ctx.user.id };
+        if (dbInput.estimatedUnitCost !== undefined) {
+          dbInput.estimatedUnitCost = dbInput.estimatedUnitCost?.toString();
+        }
+        if (dbInput.totalEstimatedCost !== undefined) {
+          dbInput.totalEstimatedCost = dbInput.totalEstimatedCost?.toString();
+        }
+        const id = await db.createMaterialItem(dbInput);
+        return { id };
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        category: z.string().optional(),
+        quantity: z.number().optional(),
+        unit: z.string().optional(),
+        estimatedUnitCost: z.number().optional(),
+        totalEstimatedCost: z.number().optional(),
+        supplier: z.string().optional(),
+        specificationNotes: z.string().optional(),
+        requiredDate: z.date().optional(),
+        status: z.enum(['pending', 'ordered', 'delivered', 'used', 'cancelled']).optional(),
+        priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+        linkedProcurementItemId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...updates } = input;
+        // Convert numeric fields to strings for database storage
+        const dbUpdates: any = { ...updates };
+        if (dbUpdates.estimatedUnitCost !== undefined) {
+          dbUpdates.estimatedUnitCost = dbUpdates.estimatedUnitCost?.toString();
+        }
+        if (dbUpdates.totalEstimatedCost !== undefined) {
+          dbUpdates.totalEstimatedCost = dbUpdates.totalEstimatedCost?.toString();
+        }
+        await db.updateMaterialItem(id, dbUpdates);
+        return { success: true };
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteMaterialItem(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // FF&E List Router
+  ffe: router({
+    list: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getFFEItems(input.projectId);
+      }),
+    
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getFFEItemById(input.id);
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        name: z.string(),
+        description: z.string().optional(),
+        category: z.string(),
+        type: z.string().optional(),
+        quantity: z.number(),
+        unit: z.string().default('piece'),
+        estimatedUnitCost: z.number().optional(),
+        totalEstimatedCost: z.number().optional(),
+        manufacturer: z.string().optional(),
+        modelNumber: z.string().optional(),
+        specificationNotes: z.string().optional(),
+        installationNotes: z.string().optional(),
+        requiredDate: z.date().optional(),
+        status: z.enum(['pending', 'ordered', 'delivered', 'installed', 'cancelled']).default('pending'),
+        priority: z.enum(['low', 'medium', 'high', 'critical']).default('medium'),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Convert numeric fields to strings for database storage
+        const dbInput: any = { ...input, createdById: ctx.user.id };
+        if (dbInput.estimatedUnitCost !== undefined) {
+          dbInput.estimatedUnitCost = dbInput.estimatedUnitCost?.toString();
+        }
+        if (dbInput.totalEstimatedCost !== undefined) {
+          dbInput.totalEstimatedCost = dbInput.totalEstimatedCost?.toString();
+        }
+        const id = await db.createFFEItem(dbInput);
+        return { id };
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        category: z.string().optional(),
+        type: z.string().optional(),
+        quantity: z.number().optional(),
+        unit: z.string().optional(),
+        estimatedUnitCost: z.number().optional(),
+        totalEstimatedCost: z.number().optional(),
+        manufacturer: z.string().optional(),
+        modelNumber: z.string().optional(),
+        specificationNotes: z.string().optional(),
+        installationNotes: z.string().optional(),
+        requiredDate: z.date().optional(),
+        status: z.enum(['pending', 'ordered', 'delivered', 'installed', 'cancelled']).optional(),
+        priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+        linkedProcurementItemId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...updates } = input;
+        // Convert numeric fields to strings for database storage
+        const dbUpdates: any = { ...updates };
+        if (dbUpdates.estimatedUnitCost !== undefined) {
+          dbUpdates.estimatedUnitCost = dbUpdates.estimatedUnitCost?.toString();
+        }
+        if (dbUpdates.totalEstimatedCost !== undefined) {
+          dbUpdates.totalEstimatedCost = dbUpdates.totalEstimatedCost?.toString();
+        }
+        await db.updateFFEItem(id, dbUpdates);
+        return { success: true };
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteFFEItem(input.id);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
