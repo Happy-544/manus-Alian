@@ -42,9 +42,9 @@ export default function Home() {
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Fit-Out Project Management Dashboard</h1>
-          <p className="text-muted-foreground mt-2">
-            Welcome back! Here's an overview of your construction projects and resources.
+          <h2 className="text-2xl font-bold tracking-tight">Welcome back!</h2>
+          <p className="text-muted-foreground">
+            Here's an overview of your construction projects.
           </p>
         </div>
         <Button onClick={() => setLocation("/projects?new=true")}>
@@ -54,9 +54,7 @@ export default function Home() {
       </div>
 
       {/* Stats Cards */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Project Overview & Statistics</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
@@ -134,16 +132,13 @@ export default function Home() {
             )}
           </CardContent>
         </Card>
-        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Recent Projects */}
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>
-              <h2 className="text-lg font-semibold">Recent Projects</h2>
-            </CardTitle>
+            <CardTitle>Recent Projects</CardTitle>
             <Button variant="ghost" size="sm" onClick={() => setLocation("/projects")}>
               View all
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -211,9 +206,7 @@ export default function Home() {
         {/* Recent Activity */}
         <Card>
           <CardHeader>
-            <CardTitle>
-              <h2 className="text-lg font-semibold">Recent Activity</h2>
-            </CardTitle>
+            <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
             {activitiesLoading ? (
