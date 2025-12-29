@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+"use client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -38,12 +38,15 @@ import {
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
+import html2pdf from "html2pdf.js";
+import { Document, Packer, Paragraph, TextRun } from "docx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 const documentTypeConfig = {
   drawing: { label: "Drawing", icon: FileImage, color: "bg-purple-100 text-purple-700" },
@@ -114,6 +117,7 @@ export default function Documents() {
   });
   const [generationStatus, setGenerationStatus] = useState<"idle" | "generating" | "completed" | "error">("idle");
   const [generatedContent, setGeneratedContent] = useState("");
+  const [isExporting, setIsExporting] = useState<"pdf" | "docx" | null>(null);
 
   const generateDocuments = trpc.documentGeneration.generateComprehensive.useMutation({
     onSuccess: (result) => {
@@ -202,6 +206,87 @@ export default function Documents() {
     acc[type].push(doc);
     return acc;
   }, {} as Record<string, typeof documents>);
+
+  const exportToPDF = async () => {
+    setIsExporting("pdf");
+    try {
+      const element = document.createElement("div");
+      element.innerHTML = `<h1>Project Documentation</h1><pre>${generatedContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`;
+      const opt = {
+        margin: 10,
+        filename: "project-documentation.pdf",
+        image: { type: "jpeg" as const, quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { orientation: "portrait" as const, unit: "mm" as const, format: "a4" },
+      };
+      await html2pdf().set(opt).from(element).save();
+      toast.success("PDF exported successfully");
+    } catch (error) {
+      toast.error("Failed to export PDF");
+      console.error(error);
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
+  const exportToDocx = async () => {
+    setIsExporting("docx");
+    try {
+      const lines = generatedContent.split("\n");
+      const children: Paragraph[] = [];
+
+      // Add title
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "Project Documentation",
+              bold: true,
+              size: 32,
+            }),
+          ],
+        })
+      );
+
+      // Add content lines
+      lines.forEach((line) => {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: line || " ",
+                size: 22,
+              }),
+            ],
+          })
+        );
+      });
+
+      const doc = new Document({
+        sections: [
+          {
+            children,
+          },
+        ],
+      });
+
+      const blob = await Packer.toBlob(doc);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "project-documentation.docx";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("Word document exported successfully");
+    } catch (error) {
+      toast.error("Failed to export Word document");
+      console.error(error);
+    } finally {
+      setIsExporting(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -496,13 +581,34 @@ export default function Documents() {
               <div className="max-h-96 overflow-y-auto bg-slate-50 p-4 rounded-lg border">
                 <pre className="text-xs whitespace-pre-wrap font-mono">{generatedContent}</pre>
               </div>
-              <Button onClick={() => {
-                setIsGenerationOpen(false);
-                setGenerationStatus("idle");
-                setGeneratedContent("");
-              }} className="w-full">
-                Close
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={exportToPDF}
+                  disabled={isExporting !== null}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  {isExporting === "pdf" ? "Exporting..." : "Export as PDF"}
+                </Button>
+                <Button
+                  onClick={exportToDocx}
+                  disabled={isExporting !== null}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  {isExporting === "docx" ? "Exporting..." : "Export as Word"}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsGenerationOpen(false);
+                    setGenerationStatus("idle");
+                    setGeneratedContent("");
+                  }}
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+              </div>
             </div>
           ) : (
             <form onSubmit={(e) => {

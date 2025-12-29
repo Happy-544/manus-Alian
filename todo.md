@@ -151,3 +151,12 @@
 - [x] Implement version history tracking for documents
 - [x] Add real-time collaboration UI with comment threads
 - [x] Write tests for export, email, and collaboration features
+
+## Export Button Integration
+- [x] Add PDF export button to document generation dialog
+- [x] Add Word export button to document generation dialog
+- [x] Implement PDF export functionality with html2pdf library
+- [x] Implement Word export functionality with docx library
+- [x] Add loading states for export operations
+- [x] Add error handling and toast notifications for exports
+- [x] Test export button UI and functionality
