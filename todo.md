@@ -130,14 +130,24 @@
 - [x] Write unit tests for Material and FF&E routers
 
 ## AI Document Generation Feature (BOQ, Drawings, Project Documentation)
-- [ ] Add document generation database schema
-- [ ] Create tRPC routers for document generation and market data
-- [ ] Update Documents page with BOQ/Drawings upload capability
-- [ ] Implement AI generation for Initial Baseline Program
-- [ ] Implement AI generation for Initial Procurement Log
-- [ ] Implement AI generation for Engineering Log
-- [ ] Implement AI generation for Budget Estimation
-- [ ] Implement AI generation for Value Engineering recommendations
-- [ ] Integrate Dubai market data and pricing intelligence
-- [ ] Add generation progress tracking and status updates
-- [ ] Write unit tests for document generation features
+- [x] Add document generation database schema
+- [x] Create tRPC routers for document generation and market data
+- [x] Update Documents page with BOQ/Drawings upload capability
+- [x] Implement AI generation for Initial Baseline Program
+- [x] Implement AI generation for Initial Procurement Log
+- [x] Implement AI generation for Engineering Log
+- [x] Implement AI generation for Budget Estimation
+- [x] Implement AI generation for Value Engineering recommendations
+- [x] Integrate Dubai market data and pricing intelligence
+- [x] Add generation progress tracking and status updates
+- [x] Write unit tests for document generation features
+
+## Document Export & Collaboration Features
+- [x] Add PDF export functionality for generated documents
+- [x] Add Word (.docx) export functionality for generated documents
+- [x] Implement automated weekly email delivery of project reports
+- [x] Add email scheduling and configuration UI
+- [x] Create document collaboration system with comments
+- [x] Implement version history tracking for documents
+- [x] Add real-time collaboration UI with comment threads
+- [x] Write tests for export, email, and collaboration features

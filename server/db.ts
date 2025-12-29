@@ -26,7 +26,11 @@ import {
   ffeList, InsertFFEListItem, FFEListItem,
   documentGenerations, InsertDocumentGeneration, DocumentGeneration,
   dubaiMarketData, InsertDubaiMarketData, DubaiMarketData,
-  generatedArtifacts, InsertGeneratedArtifact, GeneratedArtifact
+  generatedArtifacts, InsertGeneratedArtifact, GeneratedArtifact,
+  documentExports, InsertDocumentExport,
+  emailSchedules, InsertEmailSchedule,
+  documentComments, InsertDocumentComment,
+  documentVersions, InsertDocumentVersion
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1056,4 +1060,116 @@ export async function deleteGeneratedArtifact(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(generatedArtifacts).where(eq(generatedArtifacts.id, id));
+}
+
+
+// Document Export functions
+export async function createDocumentExport(exportData: InsertDocumentExport) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(documentExports).values(exportData);
+  return result;
+}
+
+export async function getDocumentExportsByGeneration(generationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(documentExports)
+    .where(eq(documentExports.generationId, generationId))
+    .orderBy(documentExports.createdAt);
+}
+
+export async function deleteDocumentExport(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(documentExports).where(eq(documentExports.id, id));
+}
+
+// Email Schedule functions
+export async function createEmailSchedule(scheduleData: InsertEmailSchedule) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(emailSchedules).values(scheduleData);
+  return result;
+}
+
+export async function getEmailSchedulesByProject(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(emailSchedules)
+    .where(eq(emailSchedules.projectId, projectId))
+    .orderBy(emailSchedules.createdAt);
+}
+
+export async function updateEmailSchedule(id: number, scheduleData: Partial<InsertEmailSchedule>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(emailSchedules).set(scheduleData).where(eq(emailSchedules.id, id));
+}
+
+export async function deleteEmailSchedule(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(emailSchedules).where(eq(emailSchedules.id, id));
+}
+
+export async function getActiveEmailSchedules() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(emailSchedules)
+    .where(eq(emailSchedules.isActive, true));
+}
+
+// Document Comment functions
+export async function createDocumentComment(commentData: InsertDocumentComment) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(documentComments).values(commentData);
+  return result;
+}
+
+export async function getDocumentCommentsByGeneration(generationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(documentComments)
+    .where(eq(documentComments.generationId, generationId))
+    .orderBy(documentComments.createdAt);
+}
+
+export async function updateDocumentComment(id: number, commentData: Partial<InsertDocumentComment>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(documentComments).set(commentData).where(eq(documentComments.id, id));
+}
+
+export async function deleteDocumentComment(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(documentComments).where(eq(documentComments.id, id));
+}
+
+// Document Version functions
+export async function createDocumentVersion(versionData: InsertDocumentVersion) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(documentVersions).values(versionData);
+  return result;
+}
+
+export async function getDocumentVersionsByGeneration(generationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(documentVersions)
+    .where(eq(documentVersions.generationId, generationId))
+    .orderBy(desc(documentVersions.versionNumber));
+}
+
+export async function getLatestDocumentVersion(generationId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(documentVersions)
+    .where(eq(documentVersions.generationId, generationId))
+    .orderBy(desc(documentVersions.versionNumber))
+    .limit(1);
+  return result[0] || null;
 }

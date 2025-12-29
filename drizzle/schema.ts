@@ -571,3 +571,78 @@ export const generatedArtifacts = mysqlTable("generatedArtifacts", {
 
 export type GeneratedArtifact = typeof generatedArtifacts.$inferSelect;
 export type InsertGeneratedArtifact = typeof generatedArtifacts.$inferInsert;
+
+
+/**
+ * Document Exports table - tracks exported documents (PDF, Word)
+ */
+export const documentExports = mysqlTable("documentExports", {
+  id: int("id").autoincrement().primaryKey(),
+  generationId: int("generationId").notNull(),
+  projectId: int("projectId").notNull(),
+  exportFormat: mysqlEnum("exportFormat", ["pdf", "docx"]).notNull(),
+  fileKey: varchar("fileKey", { length: 255 }).notNull(), // S3 file key
+  fileUrl: text("fileUrl"),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  fileSize: int("fileSize"),
+  exportedBy: int("exportedBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type DocumentExport = typeof documentExports.$inferSelect;
+export type InsertDocumentExport = typeof documentExports.$inferInsert;
+
+/**
+ * Email Schedules table - stores scheduled email deliveries for project reports
+ */
+export const emailSchedules = mysqlTable("emailSchedules", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  recipientEmails: text("recipientEmails").notNull(), // JSON array of email addresses
+  frequency: mysqlEnum("frequency", ["daily", "weekly", "biweekly", "monthly"]).default("weekly").notNull(),
+  dayOfWeek: int("dayOfWeek"), // 0-6 for weekly schedules (0=Sunday)
+  timeOfDay: varchar("timeOfDay", { length: 5 }), // HH:MM format
+  reportType: varchar("reportType", { length: 100 }).default("comprehensive").notNull(), // e.g., "weekly", "monthly", "comprehensive"
+  includeAttachments: boolean("includeAttachments").default(true),
+  isActive: boolean("isActive").default(true),
+  lastSentAt: timestamp("lastSentAt"),
+  nextScheduledAt: timestamp("nextScheduledAt"),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type EmailSchedule = typeof emailSchedules.$inferSelect;
+export type InsertEmailSchedule = typeof emailSchedules.$inferInsert;
+
+/**
+ * Document Comments table - stores comments on generated documents
+ */
+export const documentComments = mysqlTable("documentComments", {
+  id: int("id").autoincrement().primaryKey(),
+  generationId: int("generationId").notNull(),
+  projectId: int("projectId").notNull(),
+  userId: int("userId").notNull(),
+  content: text("content").notNull(),
+  sectionReference: varchar("sectionReference", { length: 255 }), // Reference to document section
+  isResolved: boolean("isResolved").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type DocumentComment = typeof documentComments.$inferSelect;
+export type InsertDocumentComment = typeof documentComments.$inferInsert;
+
+/**
+ * Document Versions table - tracks version history of generated documents
+ */
+export const documentVersions = mysqlTable("documentVersions", {
+  id: int("id").autoincrement().primaryKey(),
+  generationId: int("generationId").notNull(),
+  projectId: int("projectId").notNull(),
+  versionNumber: int("versionNumber").notNull(),
+  content: text("content").notNull(),
+  changesSummary: text("changesSummary"),
+  changedBy: int("changedBy").notNull(),
+  changeType: mysqlEnum("changeType", ["initial", "updated", "approved", "exported"]).default("initial").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type DocumentVersion = typeof documentVersions.$inferSelect;
+export type InsertDocumentVersion = typeof documentVersions.$inferInsert;

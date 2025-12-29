@@ -2141,5 +2141,148 @@ Provide detailed, actionable recommendations based on Dubai market conditions an
         return db.getMarketDataByItem(input.itemName);
       }),
   }),
+
+  documentExport: router({
+    export: protectedProcedure
+      .input(z.object({
+        generationId: z.number(),
+        projectId: z.number(),
+        format: z.enum(['pdf', 'docx']),
+        content: z.string(),
+        fileName: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const fileKey = `exports/${input.projectId}/${input.generationId}/${input.format}/${nanoid()}`;
+        await db.createDocumentExport({
+          generationId: input.generationId,
+          projectId: input.projectId,
+          exportFormat: input.format,
+          fileKey,
+          fileName: input.fileName,
+          exportedBy: ctx.user.id,
+        });
+        return { success: true, fileKey };
+      }),
+
+    getByGeneration: protectedProcedure
+      .input(z.object({ generationId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getDocumentExportsByGeneration(input.generationId);
+      }),
+  }),
+
+  emailSchedule: router({
+    create: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        recipientEmails: z.array(z.string().email()),
+        frequency: z.enum(['daily', 'weekly', 'biweekly', 'monthly']),
+        dayOfWeek: z.number().optional(),
+        timeOfDay: z.string().optional(),
+        reportType: z.string().default('comprehensive'),
+        includeAttachments: z.boolean().default(true),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return db.createEmailSchedule({
+          projectId: input.projectId,
+          recipientEmails: JSON.stringify(input.recipientEmails),
+          frequency: input.frequency,
+          dayOfWeek: input.dayOfWeek,
+          timeOfDay: input.timeOfDay,
+          reportType: input.reportType,
+          includeAttachments: input.includeAttachments,
+          createdById: ctx.user.id,
+        });
+      }),
+
+    getByProject: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getEmailSchedulesByProject(input.projectId);
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        isActive: z.boolean().optional(),
+        recipientEmails: z.array(z.string().email()).optional(),
+        frequency: z.enum(['daily', 'weekly', 'biweekly', 'monthly']).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const updateData: any = {};
+        if (input.isActive !== undefined) updateData.isActive = input.isActive;
+        if (input.recipientEmails) updateData.recipientEmails = JSON.stringify(input.recipientEmails);
+        if (input.frequency) updateData.frequency = input.frequency;
+        await db.updateEmailSchedule(input.id, updateData);
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteEmailSchedule(input.id);
+        return { success: true };
+      }),
+  }),
+
+  documentCollaboration: router({
+    addComment: protectedProcedure
+      .input(z.object({
+        generationId: z.number(),
+        projectId: z.number(),
+        content: z.string(),
+        sectionReference: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return db.createDocumentComment({
+          generationId: input.generationId,
+          projectId: input.projectId,
+          userId: ctx.user.id,
+          content: input.content,
+          sectionReference: input.sectionReference,
+        });
+      }),
+
+    getComments: protectedProcedure
+      .input(z.object({ generationId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getDocumentCommentsByGeneration(input.generationId);
+      }),
+
+    resolveComment: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.updateDocumentComment(input.id, { isResolved: true });
+        return { success: true };
+      }),
+
+    getVersionHistory: protectedProcedure
+      .input(z.object({ generationId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getDocumentVersionsByGeneration(input.generationId);
+      }),
+
+    createVersion: protectedProcedure
+      .input(z.object({
+        generationId: z.number(),
+        projectId: z.number(),
+        content: z.string(),
+        changesSummary: z.string().optional(),
+        changeType: z.enum(['initial', 'updated', 'approved', 'exported']),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const latestVersion = await db.getLatestDocumentVersion(input.generationId);
+        const versionNumber = (latestVersion?.versionNumber || 0) + 1;
+        return db.createDocumentVersion({
+          generationId: input.generationId,
+          projectId: input.projectId,
+          versionNumber,
+          content: input.content,
+          changesSummary: input.changesSummary,
+          changedBy: ctx.user.id,
+          changeType: input.changeType,
+        });
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;
