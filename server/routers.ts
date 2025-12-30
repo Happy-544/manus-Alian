@@ -2017,6 +2017,46 @@ Provide:
       }),
    }),
 
+  fileAnalysis: router({
+    analyzeProjectFiles: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        const documents = await db.getDocumentsByProject(input.projectId);
+        
+        const analysis = {
+          hasBOQ: false,
+          hasDrawings: false,
+          boqFiles: [] as any[],
+          drawingFiles: [] as any[],
+          missingDocuments: [] as string[],
+        };
+        
+        const boqFiles = documents?.filter(doc => 
+          doc.name.toLowerCase().includes('boq') || 
+          doc.name.toLowerCase().includes('bill of quantities') ||
+          doc.category === 'report'
+        ) || [];
+        
+        const drawingFiles = documents?.filter(doc => 
+          doc.name.toLowerCase().includes('drawing') || 
+          doc.name.toLowerCase().includes('plan') ||
+          doc.category === 'drawing'
+        ) || [];
+        
+        analysis.hasBOQ = boqFiles.length > 0;
+        analysis.hasDrawings = drawingFiles.length > 0;
+        analysis.boqFiles = boqFiles.map(f => ({ id: f.id, name: f.name, url: f.fileUrl }));
+        analysis.drawingFiles = drawingFiles.map(f => ({ id: f.id, name: f.name, url: f.fileUrl }));
+        
+        if (!analysis.hasBOQ) analysis.missingDocuments.push('Bill of Quantities (BOQ)');
+        if (!analysis.hasDrawings) analysis.missingDocuments.push('Drawings/Plans');
+        
+        return analysis;
+      }),
+  }),
+
   documentGeneration: router({
     create: protectedProcedure
       .input(z.object({
@@ -2060,6 +2100,70 @@ Provide:
         return { success: true };
       }),
     
+    generateAndSave: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        documentType: z.string(),
+        boqContent: z.string().optional(),
+        drawingsDescription: z.string().optional(),
+        missingInfo: z.record(z.string(), z.any()).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const project = await db.getProjectById(input.projectId);
+        if (!project) throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+        
+        const marketData = await db.getAllMarketData();
+        const marketSummary = marketData.slice(0, 20).map(m => `${m.itemName}: ${m.averagePrice} ${m.unit}`).join(', ');
+        
+        const documentTypeNames: Record<string, string> = {
+          'baseline': 'Initial Baseline Program',
+          'procurement': 'Initial Procurement Log',
+          'engineering': 'Engineering Log',
+          'budget': 'Budget Estimation',
+          'value_engineering': 'Value Engineering Recommendations',
+          'risk_assessment': 'Risk Assessment',
+        };
+        
+        const prompt = `You are a professional fit-out project consultant in Dubai. Generate a detailed ${documentTypeNames[input.documentType] || input.documentType} for the following project.
+
+Project: ${project.name}
+Location: ${project.location}
+Budget: ${project.budget}
+Description: ${project.description}
+
+BOQ Content: ${input.boqContent || 'Not provided'}
+Drawings Description: ${input.drawingsDescription || 'Not provided'}
+Additional Information: ${JSON.stringify(input.missingInfo || {})}
+
+Dubai Market Data Sample: ${marketSummary}
+
+Generate a comprehensive and detailed ${documentTypeNames[input.documentType] || input.documentType} with specific recommendations, timelines, costs, and action items based on Dubai market conditions and best practices. Format the output as a professional document with clear sections and bullet points.`;
+        
+        const response = await invokeLLM({
+          messages: [
+            { role: 'system', content: 'You are an expert fit-out project manager in Dubai with deep knowledge of local market, regulations, and best practices.' },
+            { role: 'user', content: prompt }
+          ],
+        });
+        
+        const content = response.choices[0]?.message?.content;
+        const generatedContent = typeof content === 'string' ? content : '';
+        
+        const docId = await db.createDocumentGeneration({
+          projectId: input.projectId,
+          documentType: input.documentType as any,
+          title: `${documentTypeNames[input.documentType] || input.documentType} - ${new Date().toLocaleDateString()}`,
+          description: `AI-generated ${documentTypeNames[input.documentType] || input.documentType} based on project files and Dubai market analysis`,
+          generatedContent: generatedContent,
+          status: 'completed',
+          createdById: ctx.user.id,
+          marketDataUsed: JSON.stringify({ count: marketData.length, sample: marketSummary }),
+          generationPrompt: prompt,
+        });
+        
+        return { id: docId, content: generatedContent };
+      }),
+
     generateComprehensive: protectedProcedure
       .input(z.object({
         projectId: z.number(),

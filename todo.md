@@ -160,3 +160,18 @@
 - [x] Add loading states for export operations
 - [x] Add error handling and toast notifications for exports
 - [x] Test export button UI and functionality
+
+
+## Advanced AI Document Generation with File Upload Integration
+- [x] Add BOQ file upload support (Excel, PDF formats)
+- [x] Add Drawing file upload support (PDF, CAD formats)
+- [x] Implement AI file reader for BOQ analysis
+- [x] Implement AI file reader for Drawing analysis
+- [x] Create smart file detection logic to identify BOQ and Drawing files
+- [x] Build conditional information gathering based on file completeness
+- [x] Create individual generation buttons for each document type
+- [x] Implement automatic document save to project documents
+- [x] Implement automatic download after generation
+- [x] Add file validation and error handling
+- [x] Write unit tests for file reading and analysis
+- [x] Write unit tests for document generation workflow
