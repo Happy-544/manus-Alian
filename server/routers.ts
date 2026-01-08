@@ -1,11 +1,13 @@
 import { COOKIE_NAME } from "@shared/const";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { eq, and, desc } from "drizzle-orm";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
+import { sprints, teamVelocity, workspaceStorage } from "../drizzle/schema";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
 
@@ -2386,6 +2388,93 @@ Provide detailed, actionable recommendations based on Dubai market conditions an
           changedBy: ctx.user.id,
           changeType: input.changeType,
         });
+      }),
+  }),
+
+  sprints: router({
+    create: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        name: z.string(),
+        description: z.string().optional(),
+        targetPoints: z.number().default(0),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.getDb().then(db => db?.insert(sprints).values({
+          projectId: input.projectId,
+          name: input.name,
+          description: input.description,
+          targetPoints: input.targetPoints,
+          createdById: ctx.user.id,
+          status: 'planning' as const,
+        }));
+        return result ? { success: true } : null;
+      }),
+
+    listByProject: publicProcedure
+      .input(z.number())
+      .query(async ({ input }) => {
+        const database = await db.getDb();
+        if (!db) return [];
+        return database.select().from(sprints).where(eq(sprints.projectId, input));
+      }),
+
+    getActive: publicProcedure
+      .input(z.number())
+      .query(async ({ input }) => {
+        const database = await db.getDb();
+        if (!db) return [];
+        return database.select().from(sprints).where(and(eq(sprints.projectId, input), eq(sprints.status, 'active')));
+      }),
+
+    recordVelocity: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        completedPoints: z.number(),
+        plannedPoints: z.number(),
+        completedTasks: z.number(),
+        totalTasks: z.number(),
+        teamMembersActive: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const score = input.completedPoints / Math.max(input.plannedPoints, 1);
+        const database = await db.getDb();
+        if (!db) return null;
+        return database.insert(teamVelocity).values({
+          projectId: input.projectId,
+          completedPoints: input.completedPoints,
+          plannedPoints: input.plannedPoints,
+          completedTasks: input.completedTasks,
+          totalTasks: input.totalTasks,
+          teamMembersActive: input.teamMembersActive,
+          velocityScore: score,
+        });
+      }),
+
+    getVelocityHistory: publicProcedure
+      .input(z.object({
+        projectId: z.number(),
+        limit: z.number().default(10),
+      }))
+      .query(async ({ input }) => {
+        const database = await db.getDb();
+        if (!db) return [];
+        return database.select().from(teamVelocity)
+          .where(eq(teamVelocity.projectId, input.projectId))
+          .orderBy(desc(teamVelocity.recordedAt))
+          .limit(input.limit);
+      }),
+
+    getStorage: publicProcedure
+      .input(z.number())
+      .query(async ({ input }) => {
+        const database = await db.getDb();
+        if (!db) return null;
+        const result = await database.select().from(workspaceStorage)
+          .where(eq(workspaceStorage.projectId, input))
+          .orderBy(desc(workspaceStorage.lastCalculatedAt))
+          .limit(1);
+        return result[0] || null;
       }),
   }),
 });

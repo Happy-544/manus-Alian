@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, json, longtext } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, json, longtext, bigint } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -646,3 +646,93 @@ export const documentVersions = mysqlTable("documentVersions", {
 });
 export type DocumentVersion = typeof documentVersions.$inferSelect;
 export type InsertDocumentVersion = typeof documentVersions.$inferInsert;
+
+
+/**
+ * Sprints table - tracks development sprints for projects
+ */
+export const sprints = mysqlTable("sprints", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  status: mysqlEnum("status", ["planning", "active", "completed", "cancelled"]).default("planning").notNull(),
+  startDate: timestamp("startDate"),
+  endDate: timestamp("endDate"),
+  targetPoints: int("targetPoints").default(0),
+  completedPoints: int("completedPoints").default(0),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Sprint = typeof sprints.$inferSelect;
+export type InsertSprint = typeof sprints.$inferInsert;
+
+/**
+ * Sprint Tasks table - links tasks to sprints with story points
+ */
+export const sprintTasks = mysqlTable("sprint_tasks", {
+  id: int("id").autoincrement().primaryKey(),
+  sprintId: int("sprintId").notNull(),
+  taskId: int("taskId").notNull(),
+  storyPoints: int("storyPoints").default(0),
+  addedAt: timestamp("addedAt").defaultNow().notNull(),
+});
+
+export type SprintTask = typeof sprintTasks.$inferSelect;
+export type InsertSprintTask = typeof sprintTasks.$inferInsert;
+
+/**
+ * Team Velocity table - tracks team performance metrics per sprint
+ */
+export const teamVelocity = mysqlTable("team_velocity", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  sprintId: int("sprintId"),
+  completedPoints: int("completedPoints").default(0),
+  plannedPoints: int("plannedPoints").default(0),
+  completedTasks: int("completedTasks").default(0),
+  totalTasks: int("totalTasks").default(0),
+  teamMembersActive: int("teamMembersActive").default(0),
+  velocityScore: decimal("velocityScore", { precision: 5, scale: 2 }).default("0"),
+  recordedAt: timestamp("recordedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TeamVelocity = typeof teamVelocity.$inferSelect;
+export type InsertTeamVelocity = typeof teamVelocity.$inferInsert;
+
+/**
+ * Burndown Data table - stores daily burndown metrics for sprints
+ */
+export const burndownData = mysqlTable("burndown_data", {
+  id: int("id").autoincrement().primaryKey(),
+  sprintId: int("sprintId").notNull(),
+  projectId: int("projectId").notNull(),
+  day: int("day").notNull(), // Day number in sprint (1-based)
+  remainingPoints: int("remainingPoints").notNull(),
+  completedPoints: int("completedPoints").default(0),
+  recordedAt: timestamp("recordedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type BurndownData = typeof burndownData.$inferSelect;
+export type InsertBurndownData = typeof burndownData.$inferInsert;
+
+/**
+ * Workspace Storage table - tracks workspace storage usage
+ */
+export const workspaceStorage = mysqlTable("workspace_storage", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  totalStorageBytes: bigint("totalStorageBytes", { mode: "number" }).default(0),
+  usedStorageBytes: bigint("usedStorageBytes", { mode: "number" }).default(0),
+  fileCount: int("fileCount").default(0),
+  lastCalculatedAt: timestamp("lastCalculatedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type WorkspaceStorage = typeof workspaceStorage.$inferSelect;
+export type InsertWorkspaceStorage = typeof workspaceStorage.$inferInsert;

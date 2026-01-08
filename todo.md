@@ -175,3 +175,18 @@
 - [x] Add file validation and error handling
 - [x] Write unit tests for file reading and analysis
 - [x] Write unit tests for document generation workflow
+
+
+## Sprint Management & Team Velocity (Reference Dashboard Features)
+- [x] Add sprint management database schema
+- [x] Create sprint progress tracking and burndown chart calculations
+- [x] Implement team velocity metrics and tracking
+- [x] Add workspace overview with storage tracking
+- [ ] Create burndown chart visualization
+- [ ] Create velocity trend chart visualization
+- [ ] Add keyboard shortcuts (Ctrl+K search, Ctrl+N new task, Ctrl+S sprint, Ctrl+I invite, Ctrl+A analytics)
+- [ ] Redesign dashboard with reference style (colors, layout, card design)
+- [ ] Add quick actions panel with keyboard shortcut hints
+- [ ] Implement trend indicators (week-over-week, month-over-month)
+- [ ] Add activity timeline with live indicators
+- [ ] Write unit tests for sprint and velocity features

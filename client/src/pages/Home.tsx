@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,24 +34,53 @@ export default function Home() {
   const { data: taskStats } = trpc.tasks.stats.useQuery({});
   const { data: activities, isLoading: activitiesLoading } = trpc.activities.recent.useQuery({ limit: 10 });
 
+  // SEO: Set page title and meta description
+  useEffect(() => {
+    document.title = "Fit-Out Project Management Dashboard | Construction Planning";
+    
+    // Update or create meta description
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute('content', 'Manage fit-out and construction projects efficiently. Track budgets, tasks, procurement, and generate AI-powered project documentation for Dubai projects.');
+
+    // Set keywords
+    let metaKeywords = document.querySelector('meta[name="keywords"]');
+    if (!metaKeywords) {
+      metaKeywords = document.createElement('meta');
+      metaKeywords.setAttribute('name', 'keywords');
+      document.head.appendChild(metaKeywords);
+    }
+    metaKeywords.setAttribute('content', 'fit-out management, construction project management, project dashboard, budget tracking, procurement management, Dubai projects, project planning, task management');
+  }, []);
+
   const recentProjects = projects?.slice(0, 4) || [];
   const totalBudget = projects?.reduce((sum, p) => sum + parseFloat(p.budget || "0"), 0) || 0;
   const totalSpent = projects?.reduce((sum, p) => sum + parseFloat(p.spentAmount || "0"), 0) || 0;
 
   return (
     <div className="space-y-6">
-      {/* Welcome Section */}
+      {/* Welcome Section with SEO H1 */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Welcome back!</h2>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">Fit-Out Project Management Dashboard</h1>
+          <h2 className="text-xl font-semibold text-muted-foreground mb-2">Welcome back!</h2>
           <p className="text-muted-foreground">
-            Here's an overview of your construction projects.
+            Here's an overview of your construction and fit-out projects. Manage budgets, tasks, procurement, and generate AI-powered documentation.
           </p>
         </div>
         <Button onClick={() => setLocation("/projects?new=true")}>
           <Plus className="mr-2 h-4 w-4" />
           New Project
         </Button>
+      </div>
+
+      {/* Project Overview Section */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-4">Project Overview & Key Metrics</h2>
       </div>
 
       {/* Stats Cards */}
@@ -138,7 +168,9 @@ export default function Home() {
         {/* Recent Projects */}
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Recent Projects</CardTitle>
+            <CardTitle>
+              <h2 className="text-xl font-bold">Recent Projects</h2>
+            </CardTitle>
             <Button variant="ghost" size="sm" onClick={() => setLocation("/projects")}>
               View all
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -206,7 +238,9 @@ export default function Home() {
         {/* Recent Activity */}
         <Card>
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
+            <CardTitle>
+              <h2 className="text-xl font-bold">Recent Activity</h2>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {activitiesLoading ? (
