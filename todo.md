@@ -182,11 +182,11 @@
 - [x] Create sprint progress tracking and burndown chart calculations
 - [x] Implement team velocity metrics and tracking
 - [x] Add workspace overview with storage tracking
-- [ ] Create burndown chart visualization
-- [ ] Create velocity trend chart visualization
-- [ ] Add keyboard shortcuts (Ctrl+K search, Ctrl+N new task, Ctrl+S sprint, Ctrl+I invite, Ctrl+A analytics)
+- [x] Create burndown chart visualization
+- [x] Create velocity trend chart visualization
+- [x] Add keyboard shortcuts (Ctrl+K search, Ctrl+N new task, Ctrl+S sprint, Ctrl+I invite, Ctrl+A analytics)
 - [ ] Redesign dashboard with reference style (colors, layout, card design)
-- [ ] Add quick actions panel with keyboard shortcut hints
+- [x] Add quick actions panel with keyboard shortcut hints
 - [ ] Implement trend indicators (week-over-week, month-over-month)
 - [ ] Add activity timeline with live indicators
 - [ ] Write unit tests for sprint and velocity features
