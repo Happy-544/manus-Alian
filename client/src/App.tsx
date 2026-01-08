@@ -20,6 +20,8 @@ import Procurement from "./pages/Procurement";
 import Baseline from "./pages/Baseline";
 import Materials from "./pages/Materials";
 import FFE from "./pages/FFE";
+import { Analytics } from "./pages/Analytics";
+import { Sprints } from "./pages/Sprints";
 
 function Router() {
   return (
@@ -40,6 +42,8 @@ function Router() {
         <Route path="/ai-assistant" component={AIAssistant} />
         <Route path="/notifications" component={Notifications} />
         <Route path="/settings" component={Settings} />
+        <Route path="/sprints/:projectId" component={Sprints} />
+        <Route path="/analytics/:projectId" component={Analytics} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

@@ -44,6 +44,7 @@ import {
   Target,
   Sofa,
   Hammer,
+  BarChart3,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -55,6 +56,8 @@ const menuItems = [
   { icon: FolderKanban, label: "Projects", path: "/projects" },
   { icon: ClipboardList, label: "Tasks", path: "/tasks" },
   { icon: Calendar, label: "Timeline", path: "/timeline" },
+  { icon: Target, label: "Sprints", path: "/sprints/1" },
+  { icon: BarChart3, label: "Analytics", path: "/analytics/1" },
   { icon: Package, label: "Procurement", path: "/procurement" },
   { icon: Hammer, label: "Materials", path: "/materials" },
   { icon: Sofa, label: "FF&E", path: "/ffe" },

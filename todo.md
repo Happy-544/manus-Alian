@@ -190,3 +190,39 @@
 - [ ] Implement trend indicators (week-over-week, month-over-month)
 - [ ] Add activity timeline with live indicators
 - [ ] Write unit tests for sprint and velocity features
+
+
+## Analytics Dashboard Integration
+- [x] Create Analytics page component
+- [x] Integrate BurndownChart component into Analytics page
+- [x] Integrate VelocityChart component into Analytics page
+- [x] Wire charts to tRPC sprint data queries
+- [x] Add sprint selection dropdown to Analytics page
+- [x] Add real-time data refresh for charts
+
+## Keyboard Shortcuts Integration
+- [x] Connect keyboard shortcuts to navigation
+- [ ] Implement Ctrl+N handler for new project dialog
+- [ ] Implement Ctrl+Shift+N handler for new task dialog
+- [ ] Implement Ctrl+K handler for search modal
+- [ ] Implement Ctrl+S handler for new sprint dialog
+- [ ] Implement Ctrl+I handler for invite team dialog
+- [ ] Implement Ctrl+A handler for analytics page navigation
+- [ ] Add keyboard shortcuts help modal (Ctrl+?)
+
+## Sprint Management Page
+- [x] Create Sprints page component
+- [x] Add sprint creation form
+- [x] Add sprint list view with status indicators
+- [ ] Implement task assignment to sprints
+- [ ] Add sprint progress visualization
+- [ ] Add sprint completion workflow
+- [x] Add sprint editing and deletion
+- [ ] Add sprint filtering and search
+
+## Navigation Updates
+- [x] Add Sprints link to sidebar
+- [x] Add Analytics link to sidebar
+- [x] Update App.tsx routing for new pages
+- [ ] Add breadcrumb navigation
+- [ ] Add active page highlighting in sidebar
