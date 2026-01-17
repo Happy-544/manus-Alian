@@ -16,7 +16,7 @@ import {
   BarChart3,
 } from "lucide-react";
 
-export function Home() {
+export default function HomeEnhanced() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}

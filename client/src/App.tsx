@@ -8,7 +8,9 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import AIAssistant from "./pages/AIAssistant";
 import Budget from "./pages/Budget";
 import Documents from "./pages/Documents";
-import Home from "./pages/Home";
+import { Home } from "./pages/Home";
+import DocumentWorkflow from "./pages/DocumentWorkflow";
+import DocumentLibrary from "./pages/DocumentLibrary";
 import Notifications from "./pages/Notifications";
 import ProjectDetail from "./pages/ProjectDetail";
 import Projects from "./pages/Projects";
@@ -28,6 +30,8 @@ function Router() {
     <DashboardLayout>
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/documents/new" component={DocumentWorkflow} />
+        <Route path="/documents/library" component={DocumentLibrary} />
         <Route path="/projects" component={Projects} />
         <Route path="/projects/:id" component={ProjectDetail} />
         <Route path="/tasks" component={Tasks} />
