@@ -23,7 +23,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
@@ -531,4 +530,5 @@ function getPageTitle(location: string): string {
   return titles[location] || "Fit-Out Dashboard";
 }
 
-
+// Import useAuth hook
+import { useAuth } from "@/hooks/useAuth";
