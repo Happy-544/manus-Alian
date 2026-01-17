@@ -1,0 +1,121 @@
+CREATE TABLE `boq_deliverables` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`boqTemplateId` int NOT NULL,
+	`projectId` int NOT NULL,
+	`deliverableType` enum('baseline_program','procurement_log','engineering_log','budget_estimation','value_engineering','risk_assessment') NOT NULL,
+	`fileName` varchar(255) NOT NULL,
+	`fileUrl` varchar(500) NOT NULL,
+	`fileFormat` enum('pdf','docx') NOT NULL DEFAULT 'pdf',
+	`fileSize` int,
+	`status` enum('generating','completed','failed') NOT NULL DEFAULT 'generating',
+	`generatedBy` int NOT NULL,
+	`generatedAt` timestamp NOT NULL DEFAULT (now()),
+	`downloadCount` int DEFAULT 0,
+	`lastDownloadedAt` timestamp,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `boq_deliverables_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `boq_gaps` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`boqLineItemId` int NOT NULL,
+	`projectId` int NOT NULL,
+	`field` varchar(100) NOT NULL,
+	`severity` enum('low','medium','high') NOT NULL DEFAULT 'medium',
+	`message` text NOT NULL,
+	`suggestedAction` text,
+	`suggestedValue` varchar(500),
+	`userInput` varchar(500),
+	`status` enum('pending','completed','skipped') NOT NULL DEFAULT 'pending',
+	`completedBy` int,
+	`completedAt` timestamp,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `boq_gaps_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `boq_line_items` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`boqTemplateId` int NOT NULL,
+	`projectId` int NOT NULL,
+	`lineNumber` varchar(50) NOT NULL,
+	`category` varchar(100) NOT NULL,
+	`description` text NOT NULL,
+	`specification` text,
+	`quantity` decimal(10,2) NOT NULL,
+	`unit` varchar(20) NOT NULL,
+	`unitRate` decimal(12,2) NOT NULL,
+	`totalCost` decimal(15,2) NOT NULL,
+	`drawingReferences` json DEFAULT ('[]'),
+	`locations` json DEFAULT ('[]'),
+	`dimensions` varchar(100),
+	`brand` varchar(255),
+	`supplier` varchar(255),
+	`leadTime` int,
+	`validationStatus` enum('valid','conflict','gap','error') NOT NULL DEFAULT 'valid',
+	`conflicts` json DEFAULT ('[]'),
+	`gaps` json DEFAULT ('[]'),
+	`notes` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `boq_line_items_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `boq_templates` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`projectId` int NOT NULL,
+	`fileName` varchar(255) NOT NULL,
+	`fileUrl` varchar(500) NOT NULL,
+	`fileType` enum('xlsx','xls','csv') NOT NULL DEFAULT 'xlsx',
+	`uploadDate` timestamp NOT NULL DEFAULT (now()),
+	`status` enum('uploaded','parsing','validating','conflicts_detected','gaps_identified','completed','approved') NOT NULL DEFAULT 'uploaded',
+	`totalLineItems` int DEFAULT 0,
+	`completedLineItems` int DEFAULT 0,
+	`conflictCount` int DEFAULT 0,
+	`gapCount` int DEFAULT 0,
+	`totalBudget` decimal(15,2) DEFAULT '0',
+	`createdById` int NOT NULL,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `boq_templates_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `conflicts` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`boqLineItemId` int NOT NULL,
+	`drawingAnalysisId` int,
+	`projectId` int NOT NULL,
+	`boqArea` decimal(10,2),
+	`drawingArea` decimal(10,2),
+	`percentDifference` decimal(5,2),
+	`severity` enum('low','medium','high') NOT NULL DEFAULT 'medium',
+	`status` enum('detected','acknowledged','resolved','revised') NOT NULL DEFAULT 'detected',
+	`message` text,
+	`recommendation` text,
+	`resolution` text,
+	`resolvedBy` int,
+	`resolvedAt` timestamp,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `conflicts_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `drawing_analysis` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`projectId` int NOT NULL,
+	`fileName` varchar(255) NOT NULL,
+	`fileUrl` varchar(500) NOT NULL,
+	`fileType` enum('dwg','dxf','pdf') NOT NULL,
+	`uploadDate` timestamp NOT NULL DEFAULT (now()),
+	`status` enum('uploaded','analyzing','completed','failed') NOT NULL DEFAULT 'uploaded',
+	`spaces` json DEFAULT ('[]'),
+	`measurements` json DEFAULT ('[]'),
+	`drawingCode` varchar(50),
+	`drawingTitle` varchar(255),
+	`totalArea` decimal(10,2),
+	`createdById` int NOT NULL,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `drawing_analysis_id` PRIMARY KEY(`id`)
+);

@@ -50,6 +50,20 @@
       "when": 1767860206577,
       "tag": "0006_nasty_roland_deschain",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1768655383370,
+      "tag": "0007_hot_justice",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1768655409961,
+      "tag": "0008_aspiring_wolf_cub",
+      "breakpoints": true
     }
   ]
 }

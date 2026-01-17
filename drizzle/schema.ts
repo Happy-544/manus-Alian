@@ -736,3 +736,149 @@ export const workspaceStorage = mysqlTable("workspace_storage", {
 
 export type WorkspaceStorage = typeof workspaceStorage.$inferSelect;
 export type InsertWorkspaceStorage = typeof workspaceStorage.$inferInsert;
+
+
+/**
+ * BOQ Templates table - stores uploaded BOQ files and their status
+ */
+export const boqTemplates = mysqlTable("boq_templates", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  fileUrl: varchar("fileUrl", { length: 500 }).notNull(),
+  fileType: mysqlEnum("fileType", ["xlsx", "xls", "csv"]).default("xlsx").notNull(),
+  uploadDate: timestamp("uploadDate").defaultNow().notNull(),
+  status: mysqlEnum("status", ["uploaded", "parsing", "validating", "conflicts_detected", "gaps_identified", "completed", "approved"]).default("uploaded").notNull(),
+  totalLineItems: int("totalLineItems").default(0),
+  completedLineItems: int("completedLineItems").default(0),
+  conflictCount: int("conflictCount").default(0),
+  gapCount: int("gapCount").default(0),
+  totalBudget: decimal("totalBudget", { precision: 15, scale: 2 }).default("0"),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type BOQTemplate = typeof boqTemplates.$inferSelect;
+export type InsertBOQTemplate = typeof boqTemplates.$inferInsert;
+
+/**
+ * BOQ Line Items table - stores individual BOQ items with validation status
+ */
+export const boqLineItems = mysqlTable("boq_line_items", {
+  id: int("id").autoincrement().primaryKey(),
+  boqTemplateId: int("boqTemplateId").notNull(),
+  projectId: int("projectId").notNull(),
+  lineNumber: varchar("lineNumber", { length: 50 }).notNull(),
+  category: varchar("category", { length: 100 }).notNull(),
+  description: text("description").notNull(),
+  specification: text("specification"),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unit: varchar("unit", { length: 20 }).notNull(),
+  unitRate: decimal("unitRate", { precision: 12, scale: 2 }).notNull(),
+  totalCost: decimal("totalCost", { precision: 15, scale: 2 }).notNull(),
+  drawingReferences: json("drawingReferences").$type<string[]>(),
+  locations: json("locations").$type<string[]>(),
+  dimensions: varchar("dimensions", { length: 100 }), // e.g., "2100x2400 mm"
+  brand: varchar("brand", { length: 255 }),
+  supplier: varchar("supplier", { length: 255 }),
+  leadTime: int("leadTime"), // in days
+  validationStatus: mysqlEnum("validationStatus", ["valid", "conflict", "gap", "error"]).default("valid").notNull(),
+  conflicts: json("conflicts").$type<object[]>(),
+  gaps: json("gaps").$type<object[]>(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type BOQLineItem = typeof boqLineItems.$inferSelect;
+export type InsertBOQLineItem = typeof boqLineItems.$inferInsert;
+
+/**
+ * Drawing Analysis table - stores uploaded drawings and their analysis results
+ */
+export const drawingAnalysis = mysqlTable("drawing_analysis", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  fileUrl: varchar("fileUrl", { length: 500 }).notNull(),
+  fileType: mysqlEnum("fileType", ["dwg", "dxf", "pdf"]).notNull(),
+  uploadDate: timestamp("uploadDate").defaultNow().notNull(),
+  status: mysqlEnum("status", ["uploaded", "analyzing", "completed", "failed"]).default("uploaded").notNull(),
+  spaces: json("spaces").$type<object[]>(), // Array of space objects with areas
+  measurements: json("measurements").$type<object[]>(), // Array of dimension measurements
+  drawingCode: varchar("drawingCode", { length: 50 }), // e.g., "A587-00-00-600"
+  drawingTitle: varchar("drawingTitle", { length: 255 }),
+  totalArea: decimal("totalArea", { precision: 10, scale: 2 }), // Total calculated area
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type DrawingAnalysis = typeof drawingAnalysis.$inferSelect;
+export type InsertDrawingAnalysis = typeof drawingAnalysis.$inferInsert;
+
+/**
+ * Conflicts table - stores detected conflicts between BOQ and drawings
+ */
+export const conflicts = mysqlTable("conflicts", {
+  id: int("id").autoincrement().primaryKey(),
+  boqLineItemId: int("boqLineItemId").notNull(),
+  drawingAnalysisId: int("drawingAnalysisId"),
+  projectId: int("projectId").notNull(),
+  boqArea: decimal("boqArea", { precision: 10, scale: 2 }),
+  drawingArea: decimal("drawingArea", { precision: 10, scale: 2 }),
+  percentDifference: decimal("percentDifference", { precision: 5, scale: 2 }),
+  severity: mysqlEnum("severity", ["low", "medium", "high"]).default("medium").notNull(),
+  status: mysqlEnum("status", ["detected", "acknowledged", "resolved", "revised"]).default("detected").notNull(),
+  message: text("message"),
+  recommendation: text("recommendation"),
+  resolution: text("resolution"),
+  resolvedBy: int("resolvedBy"),
+  resolvedAt: timestamp("resolvedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Conflict = typeof conflicts.$inferSelect;
+export type InsertConflict = typeof conflicts.$inferInsert;
+
+/**
+ * BOQ Gaps table - stores identified gaps and completion status
+ */
+export const boqGaps = mysqlTable("boq_gaps", {
+  id: int("id").autoincrement().primaryKey(),
+  boqLineItemId: int("boqLineItemId").notNull(),
+  projectId: int("projectId").notNull(),
+  field: varchar("field", { length: 100 }).notNull(), // e.g., "unitPrice", "supplier", "leadTime"
+  severity: mysqlEnum("severity", ["low", "medium", "high"]).default("medium").notNull(),
+  message: text("message").notNull(),
+  suggestedAction: text("suggestedAction"),
+  suggestedValue: varchar("suggestedValue", { length: 500 }),
+  userInput: varchar("userInput", { length: 500 }),
+  status: mysqlEnum("status", ["pending", "completed", "skipped"]).default("pending").notNull(),
+  completedBy: int("completedBy"),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type BOQGap = typeof boqGaps.$inferSelect;
+export type InsertBOQGap = typeof boqGaps.$inferInsert;
+
+/**
+ * BOQ Deliverables table - stores generated professional documents
+ */
+export const boqDeliverables = mysqlTable("boq_deliverables", {
+  id: int("id").autoincrement().primaryKey(),
+  boqTemplateId: int("boqTemplateId").notNull(),
+  projectId: int("projectId").notNull(),
+  deliverableType: mysqlEnum("deliverableType", ["baseline_program", "procurement_log", "engineering_log", "budget_estimation", "value_engineering", "risk_assessment"]).notNull(),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  fileUrl: varchar("fileUrl", { length: 500 }).notNull(),
+  fileFormat: mysqlEnum("fileFormat", ["pdf", "docx"]).default("pdf").notNull(),
+  fileSize: int("fileSize"), // in bytes
+  status: mysqlEnum("status", ["generating", "completed", "failed"]).default("generating").notNull(),
+  generatedBy: int("generatedBy").notNull(),
+  generatedAt: timestamp("generatedAt").defaultNow().notNull(),
+  downloadCount: int("downloadCount").default(0),
+  lastDownloadedAt: timestamp("lastDownloadedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type BOQDeliverable = typeof boqDeliverables.$inferSelect;
+export type InsertBOQDeliverable = typeof boqDeliverables.$inferInsert;
