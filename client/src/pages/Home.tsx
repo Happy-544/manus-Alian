@@ -22,9 +22,9 @@ export function Home() {
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-primary via-primary/95 to-primary/90 text-white px-8 py-16">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-5xl font-bold mb-4">Fit-Out Project Management</h1>
+          <h1 className="text-5xl font-bold mb-4">AliPM Fit-Out Project Management</h1>
           <p className="text-xl text-white/90 mb-8 max-w-2xl">
-            Excellence in luxury project delivery. Manage budgets, tasks, procurement, and generate AI-powered documentation with architectural precision.
+            Excellence in luxury fit-out project delivery. Manage budgets, tasks, procurement, and generate AI-powered documentation with architectural precision.
           </p>
           
           {/* Primary CTA */}

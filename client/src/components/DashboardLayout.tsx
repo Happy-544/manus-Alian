@@ -343,8 +343,8 @@ export default function DashboardLayoutReorganized({
       >
         {/* Sidebar Header */}
         <div className="p-4 border-b border-gold/20">
-          <h1 className="text-xl font-bold text-gold">Fit-Out</h1>
-          <p className="text-xs text-primary-foreground/70">Project Management</p>
+          <h1 className="text-xl font-bold text-gold">AliPM</h1>
+          <p className="text-xs text-primary-foreground/70">Fit-Out Project Management</p>
         </div>
 
         {/* Sidebar Content - Menu Sections */}
