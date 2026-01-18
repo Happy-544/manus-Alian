@@ -28,6 +28,7 @@ import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
 import {
+  Activity,
   Bell,
   Bot,
   Building2,
