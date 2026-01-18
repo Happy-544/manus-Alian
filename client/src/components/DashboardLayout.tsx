@@ -76,6 +76,7 @@ import {
 } from "@/components/ui/collapsible";
 import { HelpMenu } from "./HelpMenu";
 import { useProductTour } from "@/hooks/useProductTour";
+import { MobileBottomNav } from "./MobileBottomNav";
 
 /**
  * Reorganized Menu Structure with Document Creation as Primary Focus
@@ -589,9 +590,12 @@ export default function DashboardLayoutReorganized({
           </div>
         </div>
 
-        {/* Page Content */}
-        <div className="flex-1 overflow-auto px-3 md:px-6 py-3 md:py-6">{children}</div>
+        {/* Page Content - Add bottom padding on mobile for nav bar */}
+        <div className={`flex-1 overflow-auto px-3 md:px-6 py-3 md:py-6 ${isMobile ? "pb-24" : ""}`}>{children}</div>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      {isMobile && <MobileBottomNav />}
     </div>
   );
 }
