@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { OnboardingFlow, OnboardingChecklist } from "@/components/OnboardingFlow";
 import {
   Plus,
   FileText,
@@ -19,6 +20,7 @@ import {
 export function Home() {
   return (
     <div className="min-h-screen bg-background">
+      <OnboardingFlow />
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-primary via-primary/95 to-primary/90 text-white px-8 py-16">
         <div className="max-w-6xl mx-auto">
