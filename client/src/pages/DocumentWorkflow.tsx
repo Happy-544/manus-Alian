@@ -14,7 +14,9 @@ import {
   Share2,
 } from "lucide-react";
 import { GapCompletionPage } from "@/components/GapCompletionPage";
+import { ConflictResolutionPage } from "@/pages/ConflictResolutionPage";
 import type { BOQLineItem } from "@/components/GapCompletionForm";
+import type { ConflictItem } from "@/components/ConflictResolution";
 
 type WorkflowStep = "upload" | "analyze" | "conflicts" | "gaps" | "generate";
 
@@ -22,6 +24,7 @@ export default function DocumentWorkflow() {
   const [currentStep, setCurrentStep] = useState<WorkflowStep>("upload");
   const [uploadedFiles, setUploadedFiles] = useState<{ boq?: File; drawings?: File }>({});
   const [analysisResults, setAnalysisResults] = useState<any>(null);
+  const [resolvedConflicts, setResolvedConflicts] = useState<ConflictItem[]>([]);
 
   const steps: { id: WorkflowStep; label: string; description: string }[] = [
     { id: "upload", label: "Upload Files", description: "Upload BOQ and Drawings" },
@@ -195,41 +198,17 @@ export default function DocumentWorkflow() {
             )}
 
             {currentStep === "conflicts" && (
-              <div className="space-y-4">
-                <Alert className="border-amber-500/50 bg-amber-500/10">
-                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                  <AlertDescription className="text-amber-600">
-                    3 conflicts found between BOQ and Drawings. Review and resolve them.
-                  </AlertDescription>
-                </Alert>
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <Card key={i} className="border-amber-500/20">
-                      <CardContent className="pt-6">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-semibold text-sm">Conflict #{i}</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Wall area mismatch: BOQ shows 450m² but drawings show 420m²
-                            </p>
-                          </div>
-                          <Badge variant="outline" className="border-amber-500 text-amber-600">
-                            2% difference
-                          </Badge>
-                        </div>
-                        <div className="flex gap-2 mt-4">
-                          <Button size="sm" variant="outline">
-                            Use BOQ Value
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            Use Drawing Value
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
+              <ConflictResolutionPage
+                projectId={1}
+                boqFile={uploadedFiles.boq}
+                drawingFile={uploadedFiles.drawings}
+                onComplete={(conflicts) => {
+                  setResolvedConflicts(conflicts);
+                  console.log("Conflicts resolved:", conflicts);
+                }}
+                onBack={handlePreviousStep}
+                onNext={handleNextStep}
+              />
             )}
 
             {currentStep === "gaps" && (
