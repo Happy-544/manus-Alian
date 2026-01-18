@@ -41,6 +41,7 @@ import {
 import { useEffect, useState } from "react";
 import { useLocation, useSearch } from "wouter";
 import { toast } from "sonner";
+import { TemplateSuggestions } from "@/components/TemplateSuggestions";
 
 const statusConfig = {
   planning: { label: "Planning", color: "bg-blue-500", textColor: "text-blue-700", bgLight: "bg-blue-50", icon: Clock },
@@ -66,6 +67,7 @@ export default function Projects() {
   const [isCreateOpen, setIsCreateOpen] = useState(showNewDialog);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const { data: projects, isLoading, refetch } = trpc.projects.list.useQuery();
   const createProject = trpc.projects.create.useMutation({
@@ -316,6 +318,38 @@ export default function Projects() {
                   rows={3}
                 />
               </div>
+
+              {formData.name && formData.description && (
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <Label>AI Template Suggestions</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowSuggestions(!showSuggestions)}
+                      className="text-accent hover:text-accent/80"
+                    >
+                      {showSuggestions ? "Hide" : "Show"} Suggestions
+                    </Button>
+                  </div>
+                  {showSuggestions && (
+                    <div className="bg-primary/5 rounded-lg p-4">
+                      <TemplateSuggestions
+                        projectName={formData.name}
+                        projectDescription={formData.description}
+                        projectType="fit-out"
+                        budget={formData.budget}
+                        timeline={formData.endDate ? `Until ${formData.endDate}` : undefined}
+                        location={formData.location}
+                        onTemplateSelect={(templateId, templateName) => {
+                          toast.info(`Template "${templateName}" selected - apply after project creation`);
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
