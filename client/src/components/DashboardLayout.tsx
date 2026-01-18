@@ -103,11 +103,13 @@ const menuSections: MenuSection[] = [
         label: "New Document",
         path: "/documents/new",
         badge: "Primary",
+        dataTest: "new-document",
       },
       {
         icon: Library,
         label: "Document Library",
         path: "/documents/library",
+        dataTest: "document-library",
         subItems: [
           { icon: FileText, label: "My Documents", path: "/documents/library" },
           { icon: Users, label: "Shared Documents", path: "/documents/shared" },
@@ -130,6 +132,7 @@ const menuSections: MenuSection[] = [
         icon: LayoutDashboard,
         label: "Dashboard",
         path: "/dashboard",
+        dataTest: "dashboard",
       },
     ],
   },
@@ -151,6 +154,7 @@ const menuSections: MenuSection[] = [
         icon: Calendar,
         label: "Project Timeline",
         path: "/timeline",
+        dataTest: "timeline",
         subItems: [
           { icon: Target, label: "Milestones", path: "/timeline" },
           { icon: Calendar, label: "Schedule", path: "/timeline/schedule" },
@@ -215,6 +219,7 @@ const menuSections: MenuSection[] = [
         icon: Package,
         label: "Procurement Log",
         path: "/procurement",
+        dataTest: "procurement",
         subItems: [
           { icon: Package, label: "Purchase Orders", path: "/procurement" },
           { icon: Users, label: "Supplier Management", path: "/procurement/suppliers" },
@@ -240,6 +245,7 @@ const menuSections: MenuSection[] = [
         icon: Users,
         label: "Supplier Database",
         path: "/suppliers",
+        dataTest: "suppliers",
         subItems: [
           { icon: Users, label: "All Suppliers", path: "/suppliers" },
           { icon: Plus, label: "Add Supplier", path: "/suppliers/new" },
@@ -256,6 +262,7 @@ const menuSections: MenuSection[] = [
         icon: Users,
         label: "Team Members",
         path: "/team",
+        dataTest: "team",
         subItems: [
           { icon: Users, label: "Team Directory", path: "/team" },
           { icon: Plus, label: "Add Members", path: "/team/add" },
@@ -292,6 +299,7 @@ const menuSections: MenuSection[] = [
         icon: Settings,
         label: "Account Settings",
         path: "/settings/account",
+        dataTest: "settings",
       },
       {
         icon: Building2,

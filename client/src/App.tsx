@@ -5,6 +5,9 @@ import { Route, Switch } from "wouter";
 import DashboardLayout from "./components/DashboardLayout";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { ProductTour } from "./components/ProductTour";
+import { useProductTour } from "./hooks/useProductTour";
+import { PRODUCT_TOUR_STEPS } from "./lib/tourSteps";
 import AIAssistant from "./pages/AIAssistant";
 import Budget from "./pages/Budget";
 import Documents from "./pages/Documents";
@@ -29,9 +32,20 @@ import { DocumentDetailPage } from "./pages/DocumentDetailPage";
 import { ProjectDashboard } from "./pages/ProjectDashboard";
 
 function Router() {
+  const { showTour, handleTourComplete, handleTourSkip } = useProductTour();
+
   return (
-    <DashboardLayout>
-      <Switch>
+    <>
+      {showTour && (
+        <ProductTour
+          steps={PRODUCT_TOUR_STEPS}
+          onComplete={handleTourComplete}
+          onSkip={handleTourSkip}
+          autoStart={true}
+        />
+      )}
+      <DashboardLayout>
+        <Switch>
         <Route path="/" component={Home} />
         <Route path="/documents/new" component={DocumentWorkflow} />
         <Route path="/documents/library" component={DocumentLibrary} />
@@ -56,8 +70,9 @@ function Router() {
         <Route path="/dashboard" component={ProjectDashboard} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
-      </Switch>
-    </DashboardLayout>
+        </Switch>
+      </DashboardLayout>
+    </>
   );
 }
 
