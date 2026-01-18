@@ -332,13 +332,22 @@ export default function DashboardLayoutReorganized({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["DASHBOARD", "DOCUMENT CREATION"])
   );
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { loading, user } = useAuth();
   const [location, navigate] = useLocation();
+  const isMobile = useIsMobile();
   const resizeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     localStorage.setItem("sidebar-width", sidebarWidth.toString());
   }, [sidebarWidth]);
+
+  // Close sidebar on mobile when route changes
+  useEffect(() => {
+    if (isMobile) {
+      setIsSidebarOpen(false);
+    }
+  }, [location, isMobile]);
 
   const handleMouseDown = () => {
     const startX = event?.clientX || 0;
@@ -374,16 +383,47 @@ export default function DashboardLayoutReorganized({
 
   return (
     <div className="flex h-screen bg-background">
+      {/* Mobile Menu Toggle */}
+      {isMobile && (
+        <div className="fixed top-0 left-0 right-0 h-16 bg-primary border-b border-gold/20 flex items-center px-4 z-50">
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="text-gold hover:text-gold/80 transition-colors"
+          >
+            <PanelLeft size={24} />
+          </button>
+          <h1 className="text-lg font-bold text-gold ml-4">AliPM</h1>
+        </div>
+      )}
+
+      {/* Overlay for mobile */}
+      {isMobile && isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Reorganized Sidebar */}
       <div
-        className="flex flex-col bg-primary text-primary-foreground border-r border-gold/20"
-        style={{ width: `${sidebarWidth}px` }}
+        className={`flex flex-col bg-primary text-primary-foreground border-r border-gold/20 transition-all duration-300 ${
+          isMobile
+            ? `fixed left-0 top-16 bottom-0 z-40 ${
+                isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+              }`
+            : ""
+        }`}
+        style={{
+          width: isMobile ? "280px" : `${sidebarWidth}px`,
+        }}
       >
-        {/* Sidebar Header */}
-        <div className="p-4 border-b border-gold/20">
-          <h1 className="text-xl font-bold text-gold">AliPM</h1>
-          <p className="text-xs text-primary-foreground/70">Fit-Out Project Management</p>
-        </div>
+        {/* Sidebar Header - Hidden on mobile */}
+        {!isMobile && (
+          <div className="p-4 border-b border-gold/20">
+            <h1 className="text-xl font-bold text-gold">AliPM</h1>
+            <p className="text-xs text-primary-foreground/70">Fit-Out Project Management</p>
+          </div>
+        )}
 
         {/* Sidebar Content - Menu Sections */}
         <div className="flex-1 overflow-y-auto py-4">
@@ -413,7 +453,10 @@ export default function DashboardLayoutReorganized({
                     <div key={item.label}>
                       {/* Main Item */}
                       <button
-                        onClick={() => navigate(item.path)}
+                        onClick={() => {
+                          navigate(item.path);
+                          if (isMobile) setIsSidebarOpen(false);
+                        }}
                         className={`w-full px-4 py-2 flex items-center justify-between text-sm transition-colors ${
                           location === item.path
                             ? "bg-gold/20 text-gold"
@@ -440,7 +483,10 @@ export default function DashboardLayoutReorganized({
                           {item.subItems.map((subItem) => (
                             <button
                               key={subItem.label}
-                              onClick={() => navigate(subItem.path)}
+                              onClick={() => {
+                                navigate(subItem.path);
+                                if (isMobile) setIsSidebarOpen(false);
+                              }}
                               className={`w-full px-4 py-1.5 flex items-center gap-2 text-xs transition-colors ${
                                 location === subItem.path
                                   ? "text-gold"
@@ -512,17 +558,19 @@ export default function DashboardLayoutReorganized({
         </div>
       </div>
 
-      {/* Resize Handle */}
-      <div
-        ref={resizeRef}
-        onMouseDown={handleMouseDown}
-        className="w-1 bg-gold/10 hover:bg-gold/30 cursor-col-resize transition-colors"
-      />
+      {/* Resize Handle - Hidden on mobile */}
+      {!isMobile && (
+        <div
+          ref={resizeRef}
+          onMouseDown={handleMouseDown}
+          className="w-1 bg-gold/10 hover:bg-gold/30 cursor-col-resize transition-colors"
+        />
+      )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className={`flex-1 flex flex-col overflow-hidden ${isMobile ? "mt-16" : ""}`}>
         {/* Top Bar */}
-        <div className="h-16 border-b border-border bg-background flex items-center px-6 gap-4">
+        <div className={`h-16 border-b border-border bg-background flex items-center px-4 md:px-6 gap-4 ${isMobile ? "hidden" : ""}`}>
           <h2 className="text-lg font-semibold text-foreground">
             {getPageTitle(location)}
           </h2>
@@ -542,7 +590,7 @@ export default function DashboardLayoutReorganized({
         </div>
 
         {/* Page Content */}
-        <div className="flex-1 overflow-auto">{children}</div>
+        <div className="flex-1 overflow-auto px-3 md:px-6 py-3 md:py-6">{children}</div>
       </div>
     </div>
   );

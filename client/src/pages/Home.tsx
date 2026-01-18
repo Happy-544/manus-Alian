@@ -22,10 +22,10 @@ export function Home() {
     <div className="min-h-screen bg-background">
       <OnboardingFlow />
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-primary via-primary/95 to-primary/90 text-white px-8 py-16">
+      <div className="bg-gradient-to-br from-primary via-primary/95 to-primary/90 text-white px-4 md:px-8 py-8 md:py-16">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-5xl font-bold mb-4">AliPM Fit-Out Project Management</h1>
-          <p className="text-xl text-white/90 mb-8 max-w-2xl">
+          <h1 className="text-3xl md:text-5xl font-bold mb-4">AliPM Fit-Out Project Management</h1>
+          <p className="text-base md:text-xl text-white/90 mb-8 max-w-2xl">
             Excellence in luxury fit-out project delivery. Manage budgets, tasks, procurement, and generate AI-powered documentation with architectural precision.
           </p>
           
@@ -44,7 +44,7 @@ export function Home() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-8 py-12">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 md:py-12">
         {/* Quick Actions */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-foreground mb-6">Quick Actions</h2>
