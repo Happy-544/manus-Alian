@@ -463,3 +463,33 @@
 - [x] Add budget trend line chart
 - [x] Add ProjectDashboard route to App.tsx
 - [x] Add Dashboard menu item to DashboardLayout navigation
+
+
+## Project Template Management System (Phase 8)
+- [ ] Create project templates database schema
+- [ ] Build project templates tRPC router with CRUD operations
+- [ ] Create template management UI pages (list, create, edit, delete)
+- [ ] Build template preview component
+- [ ] Implement template cloning for new projects
+- [ ] Add template sharing between team members
+- [ ] Create template category/tagging system
+- [ ] Add template usage analytics
+- [ ] Integrate templates into project creation workflow
+- [ ] Write comprehensive unit tests for templates system
+
+
+## Project Template Management System (Phase 8)
+- [x] Add projectTemplates, templateSuppliers, templateBOQItems tables to schema
+- [x] Run pnpm db:push to create new tables
+- [x] Create projectTemplates service with 14 functions
+- [x] Create projectTemplatesRouter with 10 tRPC endpoints
+- [x] Add projectTemplatesRouter to main appRouter
+- [x] Create comprehensive unit tests for project templates (200 tests passing)
+- [x] Test template CRUD operations
+- [x] Test supplier management within templates
+- [x] Test BOQ item management within templates
+- [x] Test template cloning and statistics
+- [ ] Build project templates UI page
+- [ ] Integrate templates into project creation workflow
+- [ ] Add template preview and customization features
+- [ ] Create template sharing and collaboration features

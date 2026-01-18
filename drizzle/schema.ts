@@ -882,3 +882,54 @@ export const boqDeliverables = mysqlTable("boq_deliverables", {
 });
 export type BOQDeliverable = typeof boqDeliverables.$inferSelect;
 export type InsertBOQDeliverable = typeof boqDeliverables.$inferInsert;
+
+
+/**
+ * Project Templates table - stores reusable project configurations
+ */
+export const projectTemplates = mysqlTable("project_templates", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 100 }).notNull(), // e.g., "Residential", "Commercial", "Retail"
+  tags: text("tags"), // comma-separated tags for searching
+  isPublic: boolean("isPublic").default(false).notNull(),
+  previewImage: varchar("previewImage", { length: 500 }),
+  defaultSettings: json("defaultSettings").$type<Record<string, unknown>>(),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProjectTemplate = typeof projectTemplates.$inferSelect;
+export type InsertProjectTemplate = typeof projectTemplates.$inferInsert;
+
+/**
+ * Template Suppliers table - stores suppliers associated with templates
+ */
+export const templateSuppliers = mysqlTable("template_suppliers", {
+  id: int("id").autoincrement().primaryKey(),
+  templateId: int("templateId").notNull(),
+  vendorId: int("vendorId").notNull(),
+  isPrimary: boolean("isPrimary").default(false).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type TemplateSupplier = typeof templateSuppliers.$inferSelect;
+export type InsertTemplateSupplier = typeof templateSuppliers.$inferInsert;
+
+/**
+ * Template BOQ Items table - stores BOQ line items for templates
+ */
+export const templateBOQItems = mysqlTable("template_boq_items", {
+  id: int("id").autoincrement().primaryKey(),
+  templateId: int("templateId").notNull(),
+  description: varchar("description", { length: 500 }).notNull(),
+  category: varchar("category", { length: 100 }).notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unitOfMeasure: varchar("unitOfMeasure", { length: 50 }).notNull(),
+  unitPrice: decimal("unitPrice", { precision: 12, scale: 2 }),
+  vendorId: int("vendorId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type TemplateBOQItem = typeof templateBOQItems.$inferSelect;
+export type InsertTemplateBOQItem = typeof templateBOQItems.$inferInsert;

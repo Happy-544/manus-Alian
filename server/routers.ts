@@ -15,6 +15,7 @@ import { suppliersRouter } from "./routers/suppliersRouter";
 import { documentSharingRouter } from "./routers/documentSharingRouter";
 import { supplierFavoritesRouter } from "./routers/supplierFavoritesRouter";
 import { emailNotificationsRouter } from "./routers/emailNotificationsRouter";
+import { projectTemplatesRouter } from "./routers/projectTemplatesRouter";
 import { boqExcelImportRouter } from "./routers/boqExcelImportRouter";
 
 // Admin procedure - only allows admin users
@@ -32,6 +33,7 @@ export const appRouter = router({
   documentSharing: documentSharingRouter,
   supplierFavorites: supplierFavoritesRouter,
   emailNotifications: emailNotificationsRouter,
+  projectTemplates: projectTemplatesRouter,
   boqExcelImport: boqExcelImportRouter,
   
   auth: router({
