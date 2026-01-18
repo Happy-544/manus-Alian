@@ -296,7 +296,7 @@ export function DocumentDetailPage() {
           <DocumentVersioningSharing
             documentId={sampleDocument.id}
             documentName={sampleDocument.name}
-            currentVersion={4}
+            currentVersion="4"
           />
         </TabsContent>
       </Tabs>

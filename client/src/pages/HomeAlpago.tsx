@@ -219,7 +219,7 @@ export default function Home() {
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
                         <h4 className="font-semibold text-primary">{project.name}</h4>
-                        <p className="text-sm text-muted-foreground">{project.client}</p>
+                        <p className="text-sm text-muted-foreground">{project.clientName}</p>
                       </div>
                       <Badge variant="outline" className="ml-2">
                         {statusLabel}
@@ -267,7 +267,7 @@ export default function Home() {
                     <div className="w-2 h-2 rounded-full bg-accent mt-2 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-primary truncate">
-                        {activity.description}
+                        {activity.action} - {activity.userName}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {format(new Date(activity.createdAt), "MMM d, h:mm a")}

@@ -2455,13 +2455,13 @@ Provide detailed, actionable recommendations based on Dubai market conditions an
         const database = await db.getDb();
         if (!database) return null;
         return database.insert(teamVelocity).values({
-          projectId: String(input.projectId),
+          projectId: input.projectId,
           completedPoints: input.completedPoints,
           plannedPoints: input.plannedPoints,
           completedTasks: input.completedTasks,
           totalTasks: input.totalTasks,
           teamMembersActive: input.teamMembersActive,
-          velocityScore: String(score),
+          velocityScore: score.toFixed(2),
         });
       }),
 
@@ -2474,7 +2474,7 @@ Provide detailed, actionable recommendations based on Dubai market conditions an
         const database = await db.getDb();
         if (!database) return [];
         return database.select().from(teamVelocity)
-          .where(eq(teamVelocity.projectId, String(input.projectId)))
+          .where(eq(teamVelocity.projectId, input.projectId))
           .orderBy(desc(teamVelocity.recordedAt))
           .limit(input.limit);
       }),

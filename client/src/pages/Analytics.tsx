@@ -135,7 +135,7 @@ export function Analytics() {
           <CardContent>
             <div className="text-2xl font-bold">
               {velocityHistory && velocityHistory.length > 0
-                ? Math.round((velocityHistory.reduce((sum, v) => sum + v.completedPoints, 0) / velocityHistory.length) * 10) / 10
+                ? Math.round((velocityHistory.reduce((sum, v) => sum + (v.completedPoints || 0), 0) / velocityHistory.length) * 10) / 10
                 : 0}
             </div>
             <p className="text-xs text-muted-foreground">Story points/sprint</p>
@@ -149,7 +149,7 @@ export function Analytics() {
           <CardContent>
             <div className="text-2xl font-bold">
               {velocityHistory && velocityHistory.length > 0
-                ? Math.round((velocityHistory.reduce((sum, v) => sum + (v.completedTasks / Math.max(v.totalTasks, 1)), 0) / velocityHistory.length) * 100)
+                ? Math.round((velocityHistory.reduce((sum, v) => sum + ((v.completedTasks || 0) / Math.max(v.totalTasks || 1, 1)), 0) / velocityHistory.length) * 100)
                 : 0}%
             </div>
             <p className="text-xs text-muted-foreground">Average completion</p>

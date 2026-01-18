@@ -381,7 +381,7 @@ export default function ProjectDetail() {
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="font-semibold text-primary">{member.name || "Team Member"}</p>
+                        <p className="font-semibold text-primary">{member.userName || "Team Member"}</p>
                         <p className="text-sm text-muted-foreground mt-1">{member.role || "No role assigned"}</p>
                       </div>
                       <Badge variant="outline" className="border-accent/50">

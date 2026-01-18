@@ -41,25 +41,23 @@ export async function createProjectTemplate(
 ) {
   try {
     const db = await getDb();
+    if (!db) throw new Error('Database connection failed');
     const result = await db
       .insert(projectTemplates)
       .values({
         name: data.name,
         description: data.description,
         category: data.category,
-        tags: data.tags?.join(",") || "",
+        tags: data.tags?.join(",") || null,
         isPublic: data.isPublic,
         previewImage: data.previewImage,
         defaultSettings: JSON.stringify(data.defaultSettings || {}),
         createdBy: userId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .returning();
+      });
 
     return {
       success: true,
-      template: result[0],
+      template: result,
       message: "Template created successfully",
     };
   } catch (error) {
@@ -76,6 +74,7 @@ export async function createProjectTemplate(
 export async function getUserTemplates(userId: number) {
   try {
     const db = await getDb();
+    if (!db) return [];
     const templates = await db
       .select()
       .from(projectTemplates)
@@ -104,6 +103,7 @@ export async function getUserTemplates(userId: number) {
 export async function getTemplateById(templateId: number) {
   try {
     const db = await getDb();
+    if (!db) return null;
     const result = await db
       .select()
       .from(projectTemplates)
@@ -136,26 +136,26 @@ export async function updateProjectTemplate(
     }
 
     const db = await getDb();
+    if (!db) throw new Error('Database connection failed');
     const result = await db
       .update(projectTemplates)
       .set({
         name: data.name,
         description: data.description,
         category: data.category,
-        tags: data.tags?.join(","),
+        tags: data.tags?.join(",") || null,
         isPublic: data.isPublic,
         previewImage: data.previewImage,
         defaultSettings: data.defaultSettings
           ? JSON.stringify(data.defaultSettings)
-          : undefined,
+          : null,
         updatedAt: new Date(),
       })
-      .where(eq(projectTemplates.id, templateId))
-      .returning();
+      .where(eq(projectTemplates.id, templateId));
 
     return {
       success: true,
-      template: result[0],
+      template: result,
       message: "Template updated successfully",
     };
   } catch (error) {
@@ -184,6 +184,7 @@ export async function deleteProjectTemplate(
     }
 
     const db = await getDb();
+    if (!db) throw new Error('Database connection failed');
     // Delete associated suppliers and BOQ items
     await db
       .delete(templateSuppliers)
@@ -221,6 +222,7 @@ export async function addSupplierToTemplate(
 ) {
   try {
     const db = await getDb();
+    if (!db) throw new Error('Database connection failed');
     const result = await db
       .insert(templateSuppliers)
       .values({
@@ -228,12 +230,11 @@ export async function addSupplierToTemplate(
         vendorId,
         isPrimary,
         notes,
-      })
-      .returning();
+      });
 
     return {
       success: true,
-      supplier: result[0],
+      supplier: result,
     };
   } catch (error) {
     return {
@@ -250,6 +251,7 @@ export async function addSupplierToTemplate(
 export async function getTemplateSuppliers(templateId: number) {
   try {
     const db = await getDb();
+    if (!db) return [];
     const suppliers = await db
       .select()
       .from(templateSuppliers)
@@ -272,6 +274,7 @@ export async function removeSupplierFromTemplate(
 ) {
   try {
     const db = await getDb();
+    if (!db) throw new Error('Database connection failed');
     await db
       .delete(templateSuppliers)
       .where(
@@ -303,6 +306,7 @@ export async function addBOQItemToTemplate(
 ) {
   try {
     const db = await getDb();
+    if (!db) throw new Error('Database connection failed');
     const result = await db
       .insert(templateBOQItems)
       .values({
@@ -313,12 +317,11 @@ export async function addBOQItemToTemplate(
         unitOfMeasure: data.unitOfMeasure,
         unitPrice: data.unitPrice,
         vendorId: data.vendorId,
-      })
-      .returning();
+      });
 
     return {
       success: true,
-      item: result[0],
+      item: result,
     };
   } catch (error) {
     return {
@@ -335,6 +338,7 @@ export async function addBOQItemToTemplate(
 export async function getTemplateBOQItems(templateId: number) {
   try {
     const db = await getDb();
+    if (!db) return [];
     const items = await db
       .select()
       .from(templateBOQItems)
@@ -357,6 +361,7 @@ export async function removeBOQItemFromTemplate(
 ) {
   try {
     const db = await getDb();
+    if (!db) throw new Error('Database connection failed');
     await db
       .delete(templateBOQItems)
       .where(
@@ -426,7 +431,7 @@ export async function getTemplateStats(templateId: number) {
     const boqItems = await getTemplateBOQItems(templateId);
 
     const totalBOQValue = boqItems.reduce((sum, item) => {
-      return sum + (item.unitPrice || 0) * item.quantity;
+      return sum + ((item.unitPrice || 0) as number) * ((item.quantity || 0) as number);
     }, 0);
 
     return {
@@ -457,7 +462,7 @@ export async function searchTemplates(
       const matchesQuery =
         t.name.toLowerCase().includes(query.toLowerCase()) ||
         t.description?.toLowerCase().includes(query.toLowerCase()) ||
-        t.tags.toLowerCase().includes(query.toLowerCase());
+        t.tags?.toLowerCase().includes(query.toLowerCase());
 
       const matchesCategory = !category || t.category === category;
 

@@ -93,6 +93,7 @@ interface MenuItem {
   path: string;
   badge?: string;
   subItems?: MenuItem[];
+  dataTest?: string;
 }
 
 const menuSections: MenuSection[] = [

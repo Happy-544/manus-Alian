@@ -20,7 +20,7 @@ export function Sprints() {
   const [sprintDays, setSprintDays] = useState('10');
 
   // Fetch sprints
-  const { data: sprints, isLoading } = trpc.sprints.listByProject.useQuery(projectIdNum, {
+  const { data: sprints, isLoading } = trpc.sprints.getByProject.useQuery(projectIdNum, {
     enabled: !!projectIdNum,
   });
 
@@ -29,22 +29,22 @@ export function Sprints() {
   // Create sprint mutation
   const createSprintMutation = trpc.sprints.create.useMutation({
     onSuccess: () => {
-      utils.sprints.listByProject.invalidate(projectIdNum);
+      utils.sprints.getByProject.invalidate(projectIdNum);
       setSprintName('');
       setTargetPoints('100');
       setSprintDays('10');
       setIsOpen(false);
       toast.success('Sprint created successfully');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || 'Failed to create sprint');
     },
   });
 
   // Delete sprint mutation
-  const deleteSprintMutation = trpc.sprints.delete.useMutation({
+  const deleteSprintMutation = trpc.sprints.getByProject.useMutation({
     onSuccess: () => {
-      utils.sprints.listByProject.invalidate(projectIdNum);
+      utils.sprints.getByProject.invalidate(projectIdNum);
       toast.success('Sprint deleted successfully');
     },
     onError: (error) => {
@@ -63,8 +63,6 @@ export function Sprints() {
       projectId: projectIdNum,
       name: sprintName,
       targetPoints: parseInt(targetPoints),
-      durationDays: parseInt(sprintDays),
-      status: 'planning',
     });
   };
 

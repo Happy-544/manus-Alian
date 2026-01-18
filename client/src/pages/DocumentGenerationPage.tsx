@@ -84,7 +84,7 @@ export function DocumentGenerationPage({
 
       const filename = `${documentType}_${projectName}_${new Date().toISOString().split("T")[0]}.pdf`;
       const opt = {
-        margin: [10, 10, 10, 10],
+        margin: [10, 10, 10, 10] as [number, number, number, number],
         filename: filename,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
@@ -93,7 +93,7 @@ export function DocumentGenerationPage({
 
       // Create a clone of the element to avoid modifying the DOM
       const clone = element.cloneNode(true) as HTMLElement;
-      html2pdf().set(opt).from(clone).save();
+      html2pdf().set(opt as any).from(clone).save();
     } catch (error) {
       setExportError(error instanceof Error ? error.message : "Failed to export PDF");
       console.error("PDF export error:", error);
