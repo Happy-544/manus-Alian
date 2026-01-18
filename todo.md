@@ -557,3 +557,11 @@
 - [x] Add help menu to top navigation bar
 - [x] Create help documentation links
 - [x] Add contact support option with multiple channels
+
+## Help Menu First-Login Animation (Phase 15)
+- [x] Add enhanced pulse animation to help menu on first login
+- [x] Create first-login detection for help menu using localStorage
+- [x] Add attention-grabbing glow effect (ring-2 ring-gold)
+- [x] Implement animation duration (5 seconds) and fade-out
+- [x] Add bounce animation to help icon
+- [x] Test animation on first login

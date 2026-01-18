@@ -4,6 +4,7 @@
  */
 
 import { useState } from "react";
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -29,6 +30,24 @@ interface HelpMenuProps {
 export function HelpMenu({ onRestartTour }: HelpMenuProps) {
   const [showRestartModal, setShowRestartModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
+  const [isFirstLogin, setIsFirstLogin] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const hasSeenHelpMenu = localStorage.getItem('hasSeenHelpMenu');
+      return !hasSeenHelpMenu;
+    }
+    return false;
+  });
+
+  // Mark help menu as seen after 5 seconds
+  React.useEffect(() => {
+    if (isFirstLogin) {
+      const timer = setTimeout(() => {
+        localStorage.setItem('hasSeenHelpMenu', 'true');
+        setIsFirstLogin(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isFirstLogin]);
 
   const handleRestartTour = () => {
     setShowRestartModal(false);
@@ -43,10 +62,14 @@ export function HelpMenu({ onRestartTour }: HelpMenuProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 rounded-full hover:bg-gold/10 transition-all duration-200 hover:scale-110"
+          className={`h-9 w-9 rounded-full hover:bg-gold/10 transition-all duration-200 hover:scale-110 ${
+            isFirstLogin ? 'animate-pulse ring-2 ring-gold ring-offset-2 ring-offset-background' : ''
+          }`}
           title="Help & Support (Press ? for keyboard shortcut)"
         >
-          <HelpCircle className="h-5 w-5 text-gold animate-pulse" />
+          <HelpCircle className={`h-5 w-5 text-gold ${
+            isFirstLogin ? 'animate-bounce' : ''
+          }`} />
         </Button>
 
         <DropdownMenuContent align="end" className="w-56">
