@@ -404,6 +404,9 @@
 - [x] Fixed documentsRouter database query syntax to match boqGapRouter pattern
 - [x] Updated z.record() calls to use proper Zod syntax with key and value types
 - [x] Fixed field names to match documents table schema (name instead of fileName, category instead of documentType)
-- [ ] Fix documentSharingRouter database field references
+- [x] Fixed documentSharingRouter database field references (generationId, projectId, userId instead of documentId)
+- [x] Updated documentVersions queries to use correct schema fields (versionNumber, changesSummary, changedBy, changeType)
+- [x] Updated documentComments queries to use correct schema fields (generationId, userId, sectionReference, isResolved)
+- [x] Added resolveComment and getUnresolvedComments endpoints
 - [ ] Fix suppliersRouter query building syntax
 - [ ] Run full test suite to verify all fixes

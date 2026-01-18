@@ -10,25 +10,20 @@ import { documentVersions, documentComments } from "../../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 
 // Zod schemas for validation
-const documentVersionSchema = z.object({
-  documentId: z.number(),
-  versionNumber: z.string(),
-  changes: z.string().optional(),
-  fileSize: z.number(),
-  downloadUrl: z.string(),
+const createVersionSchema = z.object({
+  generationId: z.number(),
+  projectId: z.number(),
+  versionNumber: z.number(),
+  content: z.string(),
+  changesSummary: z.string().optional(),
+  changeType: z.enum(["initial", "updated", "approved", "exported"]).default("initial"),
 });
 
-const documentShareSchema = z.object({
-  documentId: z.number(),
-  sharedWithEmail: z.string().email(),
-  permission: z.enum(["view", "edit", "download"]),
-  expiresAt: z.date().optional(),
-});
-
-const documentCommentSchema = z.object({
-  documentId: z.number(),
+const addCommentSchema = z.object({
+  generationId: z.number(),
+  projectId: z.number(),
   content: z.string().min(1, "Comment cannot be empty"),
-  versionId: z.number().optional(),
+  sectionReference: z.string().optional(),
 });
 
 export const documentSharingRouter = router({
@@ -36,42 +31,53 @@ export const documentSharingRouter = router({
    * Create a new document version
    */
   createVersion: protectedProcedure
-    .input(documentVersionSchema)
+    .input(createVersionSchema)
     .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new Error("Database connection failed");
 
-      const result = await db
-        .insert(documentVersions)
-        .values({
-          documentId: input.documentId,
-          versionNumber: input.versionNumber,
-          changes: input.changes,
-          fileSize: input.fileSize,
-          downloadUrl: input.downloadUrl,
-          createdById: ctx.user?.id || 0,
-          createdAt: new Date(),
-        });
+      try {
+        const result = await db
+          .insert(documentVersions)
+          .values({
+            generationId: input.generationId,
+            projectId: input.projectId,
+            versionNumber: input.versionNumber,
+            content: input.content,
+            changesSummary: input.changesSummary,
+            changedBy: ctx.user?.id || 0,
+            changeType: input.changeType as any,
+            createdAt: new Date(),
+          });
 
-      return { success: true, versionId: (result as any).insertId };
+        return { success: true, versionId: (result as any).insertId };
+      } catch (error) {
+        console.error("Error creating document version:", error);
+        throw new Error("Failed to create document version");
+      }
     }),
 
   /**
-   * Get all versions for a document
+   * Get all versions for a generation
    */
   getVersions: publicProcedure
-    .input(z.object({ documentId: z.number() }))
+    .input(z.object({ generationId: z.number() }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
 
-      const result = await db
-        .select()
-        .from(documentVersions)
-        .where(eq(documentVersions.documentId, input.documentId))
-        .orderBy(desc(documentVersions.createdAt));
+      try {
+        const result = await db
+          .select()
+          .from(documentVersions)
+          .where(eq(documentVersions.generationId, input.generationId))
+          .orderBy(desc(documentVersions.createdAt));
 
-      return result || [];
+        return result || [];
+      } catch (error) {
+        console.error("Error fetching document versions:", error);
+        return [];
+      }
     }),
 
   /**
@@ -83,13 +89,18 @@ export const documentSharingRouter = router({
       const db = await getDb();
       if (!db) return null;
 
-      const result = await db
-        .select()
-        .from(documentVersions)
-        .where(eq(documentVersions.id, input.versionId))
-        .limit(1);
+      try {
+        const result = await db
+          .select()
+          .from(documentVersions)
+          .where(eq(documentVersions.id, input.versionId))
+          .limit(1);
 
-      return result[0] || null;
+        return result[0] || null;
+      } catch (error) {
+        console.error("Error fetching document version:", error);
+        return null;
+      }
     }),
 
   /**
@@ -101,60 +112,80 @@ export const documentSharingRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database connection failed");
 
-      // Check if user has permission to delete
-      const version = await db
-        .select()
-        .from(documentVersions)
-        .where(eq(documentVersions.id, input.versionId))
-        .limit(1);
+      try {
+        // Check if version exists
+        const version = await db
+          .select()
+          .from(documentVersions)
+          .where(eq(documentVersions.id, input.versionId))
+          .limit(1);
 
-      if (!version[0]) {
-        throw new Error("Version not found");
+        if (!version[0]) {
+          throw new Error("Version not found");
+        }
+
+        await db
+          .delete(documentVersions)
+          .where(eq(documentVersions.id, input.versionId));
+
+        return { success: true };
+      } catch (error) {
+        console.error("Error deleting document version:", error);
+        throw new Error("Failed to delete document version");
       }
-
-      await db.delete(documentVersions).where(eq(documentVersions.id, input.versionId));
-
-      return { success: true };
     }),
 
   /**
    * Add a comment to a document
    */
   addComment: protectedProcedure
-    .input(documentCommentSchema)
+    .input(addCommentSchema)
     .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new Error("Database connection failed");
 
-      const result = await db
-        .insert(documentComments)
-        .values({
-          documentId: input.documentId,
-          content: input.content,
-          versionId: input.versionId,
-          createdById: ctx.user?.id || 0,
-          createdAt: new Date(),
-        });
+      try {
+        const result = await db
+          .insert(documentComments)
+          .values({
+            generationId: input.generationId,
+            projectId: input.projectId,
+            userId: ctx.user?.id || 0,
+            content: input.content,
+            sectionReference: input.sectionReference,
+            isResolved: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
 
-      return { success: true, commentId: (result as any).insertId };
+        return { success: true, commentId: (result as any).insertId };
+      } catch (error) {
+        console.error("Error adding comment:", error);
+        throw new Error("Failed to add comment");
+      }
     }),
 
   /**
-   * Get comments for a document
+   * Get comments for a document generation
    */
   getComments: publicProcedure
-    .input(z.object({ documentId: z.number() }))
+    .input(z.object({ generationId: z.number() }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
 
-      const result = await db
-        .select()
-        .from(documentComments)
-        .where(eq(documentComments.documentId, input.documentId))
-        .orderBy(desc(documentComments.createdAt));
+      try {
+        const result = await db
+          .select()
+          .from(documentComments)
+          .where(eq(documentComments.generationId, input.generationId))
+          .orderBy(desc(documentComments.createdAt));
 
-      return result || [];
+        return result || [];
+      } catch (error) {
+        console.error("Error fetching comments:", error);
+        return [];
+      }
     }),
 
   /**
@@ -166,92 +197,170 @@ export const documentSharingRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database connection failed");
 
-      await db
-        .delete(documentComments)
-        .where(eq(documentComments.id, input.commentId));
+      try {
+        await db
+          .delete(documentComments)
+          .where(eq(documentComments.id, input.commentId));
 
-      return { success: true };
+        return { success: true };
+      } catch (error) {
+        console.error("Error deleting comment:", error);
+        throw new Error("Failed to delete comment");
+      }
     }),
 
   /**
-   * Get document sharing info
+   * Get document sharing info (versions and comments)
    */
   getSharingInfo: protectedProcedure
-    .input(z.object({ documentId: z.number() }))
+    .input(z.object({ generationId: z.number() }))
     .query(async ({ input, ctx }) => {
       const db = await getDb();
-      if (!db) return { shares: [], versions: [] };
+      if (!db) return { versions: [], comments: [] };
 
-      // Get all versions
-      const versions = await db
-        .select()
-        .from(documentVersions)
-        .where(eq(documentVersions.documentId, input.documentId))
-        .orderBy(desc(documentVersions.createdAt));
+      try {
+        // Get all versions
+        const versions = await db
+          .select()
+          .from(documentVersions)
+          .where(eq(documentVersions.generationId, input.generationId))
+          .orderBy(desc(documentVersions.createdAt));
 
-      // Get all comments
-      const comments = await db
-        .select()
-        .from(documentComments)
-        .where(eq(documentComments.documentId, input.documentId))
-        .orderBy(desc(documentComments.createdAt));
+        // Get all comments
+        const comments = await db
+          .select()
+          .from(documentComments)
+          .where(eq(documentComments.generationId, input.generationId))
+          .orderBy(desc(documentComments.createdAt));
 
-      return {
-        versions: versions || [],
-        comments: comments || [],
-      };
+        return {
+          versions: versions || [],
+          comments: comments || [],
+        };
+      } catch (error) {
+        console.error("Error fetching sharing info:", error);
+        return { versions: [], comments: [] };
+      }
     }),
 
   /**
    * Get latest version of a document
    */
   getLatestVersion: publicProcedure
-    .input(z.object({ documentId: z.number() }))
+    .input(z.object({ generationId: z.number() }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return null;
 
-      const result = await db
-        .select()
-        .from(documentVersions)
-        .where(eq(documentVersions.documentId, input.documentId))
-        .orderBy(desc(documentVersions.createdAt))
-        .limit(1);
+      try {
+        const result = await db
+          .select()
+          .from(documentVersions)
+          .where(eq(documentVersions.generationId, input.generationId))
+          .orderBy(desc(documentVersions.createdAt))
+          .limit(1);
 
-      return result[0] || null;
+        return result[0] || null;
+      } catch (error) {
+        console.error("Error fetching latest version:", error);
+        return null;
+      }
     }),
 
   /**
    * Get version count for a document
    */
   getVersionCount: publicProcedure
-    .input(z.object({ documentId: z.number() }))
+    .input(z.object({ generationId: z.number() }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return 0;
 
-      const result = await db
-        .select()
-        .from(documentVersions)
-        .where(eq(documentVersions.documentId, input.documentId));
+      try {
+        const result = await db
+          .select()
+          .from(documentVersions)
+          .where(eq(documentVersions.generationId, input.generationId));
 
-      return result?.length || 0;
+        return result?.length || 0;
+      } catch (error) {
+        console.error("Error fetching version count:", error);
+        return 0;
+      }
     }),
 
   /**
    * Get comment count for a document
    */
   getCommentCount: publicProcedure
-    .input(z.object({ documentId: z.number() }))
+    .input(z.object({ generationId: z.number() }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return 0;
 
-      const result = await db
-        .select()
-        .from(documentComments)
-        .where(eq(documentComments.documentId, input.documentId));
+      try {
+        const result = await db
+          .select()
+          .from(documentComments)
+          .where(eq(documentComments.generationId, input.generationId));
 
-      return result?.length || 0;
+        return result?.length || 0;
+      } catch (error) {
+        console.error("Error fetching comment count:", error);
+        return 0;
+      }
+    }),
+
+  /**
+   * Resolve a comment
+   */
+  resolveComment: protectedProcedure
+    .input(z.object({ commentId: z.number(), resolved: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
+
+      try {
+        await db
+          .update(documentComments)
+          .set({
+            isResolved: input.resolved,
+            updatedAt: new Date(),
+          })
+          .where(eq(documentComments.id, input.commentId));
+
+        return { success: true };
+      } catch (error) {
+        console.error("Error resolving comment:", error);
+        throw new Error("Failed to resolve comment");
+      }
+    }),
+
+  /**
+   * Get unresolved comments for a document
+   */
+  getUnresolvedComments: publicProcedure
+    .input(z.object({ generationId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      try {
+        const result = await db
+          .select()
+          .from(documentComments)
+          .where(
+            and(
+              eq(documentComments.generationId, input.generationId),
+              eq(documentComments.isResolved, false)
+            )
+          )
+          .orderBy(desc(documentComments.createdAt));
+
+        return result || [];
+      } catch (error) {
+        console.error("Error fetching unresolved comments:", error);
+        return [];
+      }
     }),
 });
