@@ -13,6 +13,8 @@ import {
   Download,
   Share2,
 } from "lucide-react";
+import { GapCompletionPage } from "@/components/GapCompletionPage";
+import type { BOQLineItem } from "@/components/GapCompletionForm";
 
 type WorkflowStep = "upload" | "analyze" | "conflicts" | "gaps" | "generate";
 
@@ -231,29 +233,15 @@ export default function DocumentWorkflow() {
             )}
 
             {currentStep === "gaps" && (
-              <div className="space-y-4">
-                <Alert className="border-blue-500/50 bg-blue-500/10">
-                  <AlertCircle className="h-4 w-4 text-blue-600" />
-                  <AlertDescription className="text-blue-600">
-                    5 gaps identified. Please provide the missing information.
-                  </AlertDescription>
-                </Alert>
-                <div className="space-y-4">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="p-4 bg-muted rounded-lg">
-                      <label className="block text-sm font-semibold mb-2">Gap #{i}</label>
-                      <p className="text-xs text-muted-foreground mb-3">
-                        Missing unit price for item: Ceramic Tiles (Premium Grade)
-                      </p>
-                      <input
-                        type="number"
-                        placeholder="Enter unit price (AED)"
-                        className="w-full px-3 py-2 border border-border rounded-md text-sm"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <GapCompletionPage
+                projectId={1}
+                boqItems={analysisResults?.boqItems || []}
+                onComplete={(completedItems) => {
+                  console.log("Gaps completed:", completedItems);
+                  handleNextStep();
+                }}
+                onSkip={handleNextStep}
+              />
             )}
 
             {currentStep === "generate" && (
