@@ -326,3 +326,30 @@
 - [x] Add keyboard shortcuts help modal
 - [x] Create feature highlights for first-time users
 - [x] Add onboarding completion tracking
+
+
+## BOQ Gap Completion Smart Forms
+- [x] Design gap detection logic for missing BOQ data
+- [x] Build AI suggestion engine for unit prices
+- [x] Build AI suggestion engine for supplier recommendations
+- [x] Build AI suggestion engine for lead times
+- [ ] Create supplier database schema and service
+- [ ] Implement supplier lookup and autocomplete
+- [x] Build smart form components with validation
+- [x] Create progressive disclosure form UI
+- [x] Add real-time validation and error handling
+- [ ] Implement data persistence for completed forms
+- [ ] Add conflict resolution interface
+- [x] Create form completion tracking and progress
+- [ ] Write unit tests for gap detection and suggestions
+- [ ] Test end-to-end gap completion workflow
+
+## tRPC Router Integration for BOQ Gap Completion
+- [x] Create boqGapRouter with 6 core endpoints
+- [x] Integrate boqGapRouter into main appRouter (boqGap namespace)
+- [x] Fix import paths in boqGapCompletion.ts
+- [ ] Create unit tests for boqGapRouter endpoints
+- [ ] Integrate gap forms into document workflow pages (/documents/new/gaps)
+- [ ] Build conflict resolution UI at /documents/new/conflicts
+- [ ] Implement professional document generation templates (6 deliverables)
+- [ ] Add supplier database management system

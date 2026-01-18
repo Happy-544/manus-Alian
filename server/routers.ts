@@ -10,6 +10,7 @@ import * as db from "./db";
 import { sprints, teamVelocity, workspaceStorage } from "../drizzle/schema";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
+import { boqGapRouter } from "./routers/boqGapRouter";
 
 // Admin procedure - only allows admin users
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -21,6 +22,7 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 
 export const appRouter = router({
   system: systemRouter,
+  boqGap: boqGapRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
