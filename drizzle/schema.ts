@@ -933,3 +933,66 @@ export const templateBOQItems = mysqlTable("template_boq_items", {
 });
 export type TemplateBOQItem = typeof templateBOQItems.$inferSelect;
 export type InsertTemplateBOQItem = typeof templateBOQItems.$inferInsert;
+
+
+/**
+ * Bulk Imports table - tracks bulk import operations
+ */
+export const bulkImports = mysqlTable("bulk_imports", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  fileSize: int("fileSize").notNull(),
+  fileType: varchar("fileType", { length: 50 }).notNull(), // 'csv' or 'json'
+  status: mysqlEnum("status", ["pending", "processing", "completed", "failed"]).default("pending").notNull(),
+  totalItems: int("totalItems").notNull(),
+  processedItems: int("processedItems").default(0).notNull(),
+  successfulItems: int("successfulItems").default(0).notNull(),
+  failedItems: int("failedItems").default(0).notNull(),
+  errorMessage: text("errorMessage"),
+  startedAt: timestamp("startedAt"),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type BulkImport = typeof bulkImports.$inferSelect;
+export type InsertBulkImport = typeof bulkImports.$inferInsert;
+
+/**
+ * Bulk Import Items table - individual items in a bulk import
+ */
+export const bulkImportItems = mysqlTable("bulk_import_items", {
+  id: int("id").autoincrement().primaryKey(),
+  bulkImportId: int("bulkImportId").notNull(),
+  rowIndex: int("rowIndex").notNull(), // Original row number in file
+  projectName: varchar("projectName", { length: 255 }).notNull(),
+  projectDescription: text("projectDescription").notNull(),
+  projectType: varchar("projectType", { length: 100 }),
+  budget: varchar("budget", { length: 50 }),
+  timeline: varchar("timeline", { length: 100 }),
+  location: varchar("location", { length: 255 }),
+  status: mysqlEnum("status", ["pending", "processing", "completed", "failed"]).default("pending").notNull(),
+  errorMessage: text("errorMessage"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type BulkImportItem = typeof bulkImportItems.$inferSelect;
+export type InsertBulkImportItem = typeof bulkImportItems.$inferInsert;
+
+/**
+ * Bulk Import Results table - stores template suggestions for each imported project
+ */
+export const bulkImportResults = mysqlTable("bulk_import_results", {
+  id: int("id").autoincrement().primaryKey(),
+  bulkImportItemId: int("bulkImportItemId").notNull(),
+  templateId: int("templateId").notNull(),
+  templateName: varchar("templateName", { length: 255 }).notNull(),
+  category: varchar("category", { length: 100 }).notNull(),
+  description: text("description"),
+  confidenceScore: int("confidenceScore").notNull(), // 0-100
+  matchingReasons: json("matchingReasons").$type<string[]>().notNull(),
+  previewImage: text("previewImage"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type BulkImportResult = typeof bulkImportResults.$inferSelect;
+export type InsertBulkImportResult = typeof bulkImportResults.$inferInsert;

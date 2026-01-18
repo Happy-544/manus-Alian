@@ -18,6 +18,7 @@ import { emailNotificationsRouter } from "./routers/emailNotificationsRouter";
 import { projectTemplatesRouter } from "./routers/projectTemplatesRouter";
 import { boqExcelImportRouter } from "./routers/boqExcelImportRouter";
 import { templateSuggestionsRouter } from "./routers/templateSuggestionsRouter";
+import { bulkImportRouter } from "./routers/bulkImportRouter";
 
 // Admin procedure - only allows admin users
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -37,6 +38,7 @@ export const appRouter = router({
   projectTemplates: projectTemplatesRouter,
   boqExcelImport: boqExcelImportRouter,
   templateSuggestions: templateSuggestionsRouter,
+  bulkImport: bulkImportRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

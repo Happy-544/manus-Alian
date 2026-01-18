@@ -30,6 +30,7 @@ import { Sprints } from "./pages/Sprints";
 import { SupplierManagement } from "./pages/SupplierManagement";
 import { DocumentDetailPage } from "./pages/DocumentDetailPage";
 import { ProjectDashboard } from "./pages/ProjectDashboard";
+import BulkImport from "./pages/BulkImport";
 
 function Router() {
   const { showTour, handleTourComplete, handleTourSkip } = useProductTour();
@@ -66,6 +67,7 @@ function Router() {
         <Route path="/sprints/:projectId" component={Sprints} />
         <Route path="/analytics/:projectId" component={Analytics} />
         <Route path="/suppliers" component={SupplierManagement} />
+        <Route path="/bulk-import" component={BulkImport} />
         <Route path="/documents/:id" component={DocumentDetailPage} />
         <Route path="/dashboard" component={ProjectDashboard} />
         <Route path="/404" component={NotFound} />

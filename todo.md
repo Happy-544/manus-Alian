@@ -579,3 +579,20 @@
 - [x] Write unit tests for template suggestion API endpoint
 - [ ] Write unit tests for UI component
 - [x] Test end-to-end suggestion workflow
+
+
+## Bulk Import Feature for Template Suggestions
+- [x] Create bulk import database tables (bulk_imports, bulk_import_items, bulk_import_results)
+- [x] Build bulk import service with parallel processing (max 5 concurrent)
+- [x] Create file upload parser for CSV and JSON formats
+- [x] Implement validation for imported project data
+- [x] Build tRPC endpoints for bulk operations (create, get status, get results)
+- [x] Create bulk import UI page with file upload
+- [x] Add progress tracking and real-time status updates
+- [x] Build results display with filtering and sorting
+- [x] Implement export results to CSV/JSON
+- [x] Add error handling and retry logic for failed items
+- [x] Write unit tests for bulk import service
+- [x] Write unit tests for file parsers
+- [ ] Write unit tests for tRPC endpoints
+- [x] Test end-to-end bulk import workflow
