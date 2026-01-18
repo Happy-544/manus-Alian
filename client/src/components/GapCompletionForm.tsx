@@ -16,7 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle, CheckCircle, Lightbulb, Loader2, TrendingUp } from "lucide-react";
+import { AlertCircle, CheckCircle, Lightbulb, Loader2, TrendingUp, ChevronDown } from "lucide-react";
+import { SupplierSelector, type Supplier } from "./SupplierSelector";
 
 export interface BOQLineItem {
   id: string;
@@ -82,6 +83,7 @@ export function GapCompletionForm({
 }: GapCompletionFormProps) {
   const [formData, setFormData] = useState<BOQLineItem>(item);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showSupplierSelector, setShowSupplierSelector] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Calculate completion percentage
@@ -281,24 +283,78 @@ export function GapCompletionForm({
             <div>
               <label className="block text-sm font-semibold mb-2">Supplier</label>
               <div className="space-y-2">
-                <input
-                  type="text"
-                  placeholder="Enter supplier name"
-                  value={formData.supplier || ""}
-                  onChange={(e) => handleFieldChange("supplier", e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md text-sm ${
-                    validationErrors.supplier
-                      ? "border-red-500 bg-red-50"
-                      : "border-border"
-                  }`}
-                />
+                {/* Display selected supplier or input field */}
+                {formData.supplier ? (
+                  <div className="p-3 bg-muted rounded-md border border-gold/50 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{formData.supplier}</p>
+                      <p className="text-xs text-muted-foreground">Selected supplier</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        handleFieldChange("supplier", undefined);
+                        setShowSupplierSelector(false);
+                      }}
+                      className="h-7 text-xs"
+                    >
+                      Change
+                    </Button>
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    placeholder="Enter supplier name or select from database"
+                    value={formData.supplier || ""}
+                    onChange={(e) => handleFieldChange("supplier", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-md text-sm ${
+                      validationErrors.supplier
+                        ? "border-red-500 bg-red-50"
+                        : "border-border"
+                    }`}
+                  />
+                )}
+                
+                {/* Supplier Selector Toggle */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowSupplierSelector(!showSupplierSelector)}
+                  className="w-full h-8 text-xs"
+                >
+                  <ChevronDown className={`w-3 h-3 mr-1 transition-transform ${showSupplierSelector ? "rotate-180" : ""}`} />
+                  {showSupplierSelector ? "Hide Supplier Database" : "Browse Supplier Database"}
+                </Button>
+
+                {/* Supplier Selector Component */}
+                {showSupplierSelector && (
+                  <div className="p-3 bg-muted/50 rounded-md border border-border">
+                    <SupplierSelector
+                      category={item.category}
+                      onSelect={(supplier: Supplier) => {
+                        handleFieldChange("supplier", supplier.name);
+                        if (supplier.leadTime && !formData.leadTime) {
+                          handleFieldChange("leadTime", supplier.leadTime);
+                        }
+                        setShowSupplierSelector(false);
+                      }}
+                      selectedSupplierId={undefined}
+                      maxResults={5}
+                      showSearch={true}
+                    />
+                  </div>
+                )}
+
                 {validationErrors.supplier && (
                   <p className="text-xs text-red-600">{validationErrors.supplier}</p>
                 )}
-                {gap.suggestions?.supplier && (
+
+                {/* AI Suggestions Fallback */}
+                {!showSupplierSelector && gap.suggestions?.supplier && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-muted-foreground">Suggested Suppliers</span>
+                      <span className="text-xs font-semibold text-muted-foreground">AI Suggested Suppliers</span>
                       <span className="text-xs text-gold">
                         {Math.round(gap.suggestions.supplier.confidence * 100)}% confidence
                       </span>
@@ -362,9 +418,12 @@ export function GapCompletionForm({
                   <div className="p-3 bg-muted rounded-md">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-semibold text-muted-foreground">AI Suggestion</span>
-                      <span className="text-xs text-gold">
-                        {Math.round(gap.suggestions.leadTime.confidence * 100)}% confidence
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3 text-gold" />
+                        <span className="text-xs text-gold">
+                          {Math.round(gap.suggestions.leadTime.confidence * 100)}% confidence
+                        </span>
+                      </div>
                     </div>
                     <p className="text-sm font-semibold text-foreground">
                       {gap.suggestions.leadTime.suggestedLeadTime} days
@@ -373,9 +432,9 @@ export function GapCompletionForm({
                       Range: {gap.suggestions.leadTime.range.min} - {gap.suggestions.leadTime.range.max} days
                     </p>
                     {gap.suggestions.leadTime.factors.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        <p className="text-xs font-semibold text-muted-foreground">Factors:</p>
-                        <ul className="text-xs text-muted-foreground space-y-0.5">
+                      <div className="mt-2">
+                        <p className="text-xs font-semibold text-muted-foreground mb-1">Factors:</p>
+                        <ul className="text-xs text-muted-foreground space-y-1">
                           {gap.suggestions.leadTime.factors.map((factor, i) => (
                             <li key={i}>• {factor}</li>
                           ))}
@@ -403,7 +462,7 @@ export function GapCompletionForm({
               <label className="block text-sm font-semibold mb-2">Material</label>
               <input
                 type="text"
-                placeholder="e.g., Ceramic, Marble, Steel"
+                placeholder="Enter material type"
                 value={formData.material || ""}
                 onChange={(e) => handleFieldChange("material", e.target.value)}
                 className={`w-full px-3 py-2 border rounded-md text-sm ${
@@ -423,7 +482,7 @@ export function GapCompletionForm({
               <label className="block text-sm font-semibold mb-2">Brand</label>
               <input
                 type="text"
-                placeholder="e.g., Nippon, TATA, Porcelanosa"
+                placeholder="Enter brand name"
                 value={formData.brand || ""}
                 onChange={(e) => handleFieldChange("brand", e.target.value)}
                 className={`w-full px-3 py-2 border rounded-md text-sm ${
@@ -440,37 +499,35 @@ export function GapCompletionForm({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 pt-4 border-t border-border">
-          {!showSuggestions && gap.suggestions && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowSuggestions(true)}
-              className="flex items-center gap-2"
-            >
-              <Lightbulb className="w-4 h-4" />
-              Load AI Suggestions
-            </Button>
-          )}
+        <div className="flex gap-2 pt-4">
           <Button
             onClick={handleSubmit}
-            disabled={isLoading || completionPercentage < 100}
-            className="ml-auto bg-gold text-primary hover:bg-gold/90 flex items-center gap-2"
+            disabled={isLoading}
+            className="flex-1 bg-gold hover:bg-gold/90 text-black"
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Saving...
-              </>
-            ) : completionPercentage === 100 ? (
-              <>
-                <CheckCircle className="w-4 h-4" />
-                Complete Item
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Completing...
               </>
             ) : (
-              "Complete Item"
+              <>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Complete Item
+              </>
             )}
           </Button>
+          {onLoadSuggestions && (
+            <Button
+              onClick={onLoadSuggestions}
+              variant="outline"
+              disabled={isLoading}
+              className="flex-1"
+            >
+              <Lightbulb className="w-4 h-4 mr-2" />
+              Load Suggestions
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
