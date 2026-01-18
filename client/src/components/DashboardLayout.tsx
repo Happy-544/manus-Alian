@@ -33,6 +33,7 @@ import {
   Building2,
   Calendar,
   ChevronRight,
+  Clock,
   ClipboardList,
   DollarSign,
   FileText,
