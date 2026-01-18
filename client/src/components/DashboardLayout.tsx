@@ -74,6 +74,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { HelpMenu } from "./HelpMenu";
+import { useProductTour } from "@/hooks/useProductTour";
 
 /**
  * Reorganized Menu Structure with Document Creation as Primary Focus
@@ -530,6 +532,11 @@ export default function DashboardLayoutReorganized({
             <Button variant="ghost" size="sm">
               <Settings size={18} />
             </Button>
+            <HelpMenu onRestartTour={() => {
+              // Trigger tour restart
+              const event = new CustomEvent('restartTour');
+              window.dispatchEvent(event);
+            }} />
           </div>
         </div>
 
