@@ -49,7 +49,7 @@ export function SupplierSelector({
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   // Fetch all suppliers
-  const { data: allSuppliers = [], isLoading: suppliersLoading } = trpc.suppliers.list.useQuery();
+  const { data: allSuppliers = [], isLoading: suppliersLoading } = trpc.suppliers.getAll.useQuery();
 
   // Fetch suppliers by category if category is provided
   const { data: categorySuppliers = [], isLoading: categoryLoading } = trpc.suppliers.getByCategory.useQuery(
@@ -85,10 +85,10 @@ export function SupplierSelector({
     // Filter by search term
     if (searchTerm.trim()) {
       source = source.filter(
-        (s) =>
+        (s: any) =>
           s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           s.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (s.specialization || []).some((spec) =>
+          (s.specialization || []).some((spec: any) =>
             spec.toLowerCase().includes(searchTerm.toLowerCase())
           )
       );

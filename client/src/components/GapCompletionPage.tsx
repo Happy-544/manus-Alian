@@ -38,7 +38,8 @@ export function GapCompletionPage({
   const [gapAnalysis, setGapAnalysis] = useState<GapAnalysisResult[]>([]);
   const [completedItems, setCompletedItems] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const [isAnalyzing, isLoadingSuggestions] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [isSavingItem, setIsSavingItem] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "high" | "medium" | "low">("all");
 

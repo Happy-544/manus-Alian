@@ -2425,11 +2425,11 @@ Provide detailed, actionable recommendations based on Dubai market conditions an
         return result ? { success: true } : null;
       }),
 
-    listByProject: publicProcedure
+    getByProject: publicProcedure
       .input(z.number())
       .query(async ({ input }) => {
         const database = await db.getDb();
-        if (!db) return [];
+        if (!database) return [];
         return database.select().from(sprints).where(eq(sprints.projectId, input));
       }),
 
@@ -2437,7 +2437,7 @@ Provide detailed, actionable recommendations based on Dubai market conditions an
       .input(z.number())
       .query(async ({ input }) => {
         const database = await db.getDb();
-        if (!db) return [];
+        if (!database) return [];
         return database.select().from(sprints).where(and(eq(sprints.projectId, input), eq(sprints.status, 'active')));
       }),
 
@@ -2453,15 +2453,15 @@ Provide detailed, actionable recommendations based on Dubai market conditions an
       .mutation(async ({ input }) => {
         const score = input.completedPoints / Math.max(input.plannedPoints, 1);
         const database = await db.getDb();
-        if (!db) return null;
+        if (!database) return null;
         return database.insert(teamVelocity).values({
-          projectId: input.projectId,
+          projectId: String(input.projectId),
           completedPoints: input.completedPoints,
           plannedPoints: input.plannedPoints,
           completedTasks: input.completedTasks,
           totalTasks: input.totalTasks,
           teamMembersActive: input.teamMembersActive,
-          velocityScore: score,
+          velocityScore: String(score),
         });
       }),
 
@@ -2472,9 +2472,9 @@ Provide detailed, actionable recommendations based on Dubai market conditions an
       }))
       .query(async ({ input }) => {
         const database = await db.getDb();
-        if (!db) return [];
+        if (!database) return [];
         return database.select().from(teamVelocity)
-          .where(eq(teamVelocity.projectId, input.projectId))
+          .where(eq(teamVelocity.projectId, String(input.projectId)))
           .orderBy(desc(teamVelocity.recordedAt))
           .limit(input.limit);
       }),
@@ -2483,7 +2483,7 @@ Provide detailed, actionable recommendations based on Dubai market conditions an
       .input(z.number())
       .query(async ({ input }) => {
         const database = await db.getDb();
-        if (!db) return null;
+        if (!database) return null;
         const result = await database.select().from(workspaceStorage)
           .where(eq(workspaceStorage.projectId, input))
           .orderBy(desc(workspaceStorage.lastCalculatedAt))

@@ -13,7 +13,7 @@ export function Analytics() {
   const projectIdNum = projectId ? parseInt(projectId) : 0;
 
   // Fetch sprints for the project
-  const { data: sprints, isLoading: sprintsLoading } = trpc.sprints.listByProject.useQuery(projectIdNum, {
+  const { data: sprints, isLoading: sprintsLoading } = trpc.sprints.getByProject.useQuery(projectIdNum, {
     enabled: !!projectIdNum,
   });
 
@@ -25,12 +25,12 @@ export function Analytics() {
 
   // Fetch burndown data for selected sprint
   const selectedSprintIdNum = selectedSprintId ? parseInt(selectedSprintId) : null;
-  const { data: burndownData, isLoading: burndownLoading } = trpc.sprints.getBurndown.useQuery(
-    selectedSprintIdNum || 0,
-    { enabled: !!selectedSprintIdNum }
+  const { data: burndownData, isLoading: burndownLoading } = trpc.sprints.getActive.useQuery(
+    projectIdNum,
+    { enabled: !!projectIdNum }
   );
 
-  const activeSprint = sprints?.find(s => s.status === 'active');
+  const activeSprint = sprints?.find((s: any) => s.status === 'active');
   const defaultSprintId = activeSprint?.id.toString() || sprints?.[0]?.id.toString() || '';
 
   const displaySprintId = selectedSprintId || defaultSprintId;
@@ -59,7 +59,7 @@ export function Analytics() {
                 <SelectValue placeholder="Select a sprint" />
               </SelectTrigger>
               <SelectContent>
-                {sprints?.map((sprint) => (
+                {sprints?.map((sprint: any) => (
                   <SelectItem key={sprint.id} value={sprint.id.toString()}>
                     {sprint.name} ({sprint.status})
                   </SelectItem>

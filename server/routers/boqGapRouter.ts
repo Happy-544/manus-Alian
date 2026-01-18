@@ -214,7 +214,7 @@ export const boqGapRouter = router({
         console.error("Error validating item:", error);
         return {
           success: false,
-          itemId: item.id,
+          itemId: input.item.id || 0,
           isValid: false,
           errors: ["Validation failed"],
         };
