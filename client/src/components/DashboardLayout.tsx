@@ -61,6 +61,7 @@ import {
   Layers,
   ChevronDown,
   Star,
+  Truck,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
