@@ -372,8 +372,13 @@
 - [x] Create BudgetTemplate for budget estimation
 - [x] Create DrawingsTemplate for architectural drawings
 - [x] Create DocumentPreviewExport component for preview and export
-- [ ] Integrate templates into document generation workflow
-- [ ] Add PDF export functionality using html2pdf
-- [ ] Add DOCX export functionality using docx library
-- [ ] Create document generation tRPC endpoints
+- [x] Create document generation service with PDF/DOCX export helpers
+- [x] Create DocumentGenerationPage for preview and export UI
+- [x] Create documentsRouter with tRPC endpoints
+- [x] Fix documentsRouter database integration using getDb pattern
+- [x] Install html2pdf.js library for PDF export
+- [x] Implement PDF export in DocumentGenerationPage
+- [x] Create ConflictResolution component for BOQ vs Drawings discrepancies
+- [x] Create ConflictResolutionPage for document workflow
+- [ ] Integrate ConflictResolutionPage into DocumentWorkflow
 - [ ] Test document generation and export workflow

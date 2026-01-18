@@ -4,19 +4,24 @@
  */
 
 import { useState, useCallback } from "react";
-import { useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Download, Printer, Eye, FileText, Loader2, AlertCircle } from "lucide-react";
-import { DocumentTemplate, DocumentMetadata } from "@/components/DocumentTemplate";
-import { BOQTemplate, BOQItem } from "@/components/templates/BOQTemplate";
-import { BaselineTemplate, BaselinePhase } from "@/components/templates/BaselineTemplate";
-import { ProcurementTemplate, ProcurementItem } from "@/components/templates/ProcurementTemplate";
-import { EngineeringLogTemplate, EngineeringEntry } from "@/components/templates/EngineeringLogTemplate";
-import { BudgetTemplate, BudgetItem } from "@/components/templates/BudgetTemplate";
-import { DrawingsTemplate, DrawingSheet } from "@/components/templates/DrawingsTemplate";
+import type { DocumentMetadata } from "@/components/DocumentTemplate";
+import { BOQTemplate } from "@/components/templates/BOQTemplate";
+import { BaselineTemplate } from "@/components/templates/BaselineTemplate";
+import { ProcurementTemplate } from "@/components/templates/ProcurementTemplate";
+import { EngineeringLogTemplate } from "@/components/templates/EngineeringLogTemplate";
+import { BudgetTemplate } from "@/components/templates/BudgetTemplate";
+import { DrawingsTemplate } from "@/components/templates/DrawingsTemplate";
+import type { BOQItem } from "@/components/templates/BOQTemplate";
+import type { BaselinePhase } from "@/components/templates/BaselineTemplate";
+import type { ProcurementItem } from "@/components/templates/ProcurementTemplate";
+import type { EngineeringEntry } from "@/components/templates/EngineeringLogTemplate";
+import type { BudgetItem } from "@/components/templates/BudgetTemplate";
+import type { DrawingSheet } from "@/components/templates/DrawingsTemplate";
 
 type DocumentType = "boq" | "baseline" | "procurement" | "engineering" | "budget" | "drawings";
 
@@ -77,15 +82,18 @@ export function DocumentGenerationPage({
         throw new Error("Document preview not found");
       }
 
+      const filename = `${documentType}_${projectName}_${new Date().toISOString().split("T")[0]}.pdf`;
       const opt = {
-        margin: 10,
-        filename: `${documentType}_${projectName}_${new Date().toISOString().split("T")[0]}.pdf`,
+        margin: [10, 10, 10, 10],
+        filename: filename,
         image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2 },
+        html2canvas: { scale: 2, useCORS: true },
         jsPDF: { orientation: "portrait", unit: "mm", format: "a4" },
       };
 
-      html2pdf().set(opt).from(element).save();
+      // Create a clone of the element to avoid modifying the DOM
+      const clone = element.cloneNode(true) as HTMLElement;
+      html2pdf().set(opt).from(clone).save();
     } catch (error) {
       setExportError(error instanceof Error ? error.message : "Failed to export PDF");
       console.error("PDF export error:", error);
@@ -104,9 +112,11 @@ export function DocumentGenerationPage({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          documentType,
-          projectId,
-          projectName,
+          input: {
+            documentType,
+            projectId,
+            projectName,
+          },
         }),
       });
 
@@ -207,8 +217,10 @@ export function DocumentGenerationPage({
         </TabsList>
 
         <TabsContent value="preview" className="space-y-4">
-          <Card className="p-8 bg-white overflow-auto max-h-[calc(100vh-300px)] document-preview">
-            {renderDocumentPreview(documentType, metadata)}
+          <Card className="p-8 bg-white overflow-auto max-h-[calc(100vh-300px)]">
+            <div className="document-preview">
+              {renderDocumentPreview(documentType, metadata)}
+            </div>
           </Card>
         </TabsContent>
 

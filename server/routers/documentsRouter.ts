@@ -7,6 +7,9 @@ import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
 import { generateFilename, validateDocumentContent } from "../documentGeneration";
 import { storagePut } from "../storage";
+import { getDb } from "../db";
+import { documents } from "../../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 export const documentsRouter = router({
   /**
@@ -14,15 +17,15 @@ export const documentsRouter = router({
    */
   getProjectDocuments: protectedProcedure
     .input(z.object({ projectId: z.number() }))
-    .query(async ({ input, ctx }) => {
-      if (!ctx.db) throw new Error("Database connection failed");
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
 
-      const documents = await ctx.db.query.documents.findMany({
-        where: (doc, { eq }) => eq(doc.projectId, input.projectId),
-        orderBy: (doc, { desc }) => [desc(doc.createdAt)],
+      const docs = await db.query.documents.findMany({
+        where: eq(documents.projectId, input.projectId),
       });
 
-      return documents;
+      return docs;
     }),
 
   /**
@@ -30,14 +33,15 @@ export const documentsRouter = router({
    */
   getDocument: protectedProcedure
     .input(z.object({ documentId: z.number() }))
-    .query(async ({ input, ctx }) => {
-      if (!ctx.db) throw new Error("Database connection failed");
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
 
-      const document = await ctx.db.query.documents.findFirst({
-        where: (doc, { eq }) => eq(doc.id, input.documentId),
+      const doc = await db.query.documents.findFirst({
+        where: eq(documents.id, input.documentId),
       });
 
-      return document;
+      return doc;
     }),
 
   /**
@@ -55,19 +59,20 @@ export const documentsRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      if (!ctx.db) throw new Error("Database connection failed");
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
 
-      const document = await ctx.db.insert(ctx.db.schema.documents).values({
+      const result = await db.insert(documents).values({
         projectId: input.projectId,
         fileName: input.fileName,
         fileSize: input.fileSize,
         fileUrl: input.fileUrl,
-        documentType: input.documentType,
+        documentType: input.documentType as any,
         description: input.description,
         uploadedById: ctx.user.id,
       });
 
-      return document;
+      return result;
     }),
 
   /**
@@ -75,10 +80,11 @@ export const documentsRouter = router({
    */
   deleteDocument: protectedProcedure
     .input(z.object({ documentId: z.number() }))
-    .mutation(async ({ input, ctx }) => {
-      if (!ctx.db) throw new Error("Database connection failed");
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
 
-      await ctx.db.delete(ctx.db.schema.documents).where((doc) => doc.id === input.documentId);
+      await db.delete(documents).where(eq(documents.id, input.documentId));
 
       return { success: true };
     }),
@@ -95,7 +101,7 @@ export const documentsRouter = router({
         content: z.record(z.any()).optional(),
       })
     )
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input }) => {
       // Validate content
       if (input.content) {
         const validation = validateDocumentContent(input.content);
@@ -132,7 +138,7 @@ export const documentsRouter = router({
         content: z.record(z.any()).optional(),
       })
     )
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input }) => {
       // Validate content
       if (input.content) {
         const validation = validateDocumentContent(input.content);
@@ -169,8 +175,9 @@ export const documentsRouter = router({
         content: z.record(z.any()),
       })
     )
-    .mutation(async ({ input, ctx }) => {
-      if (!ctx.db) throw new Error("Database connection failed");
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
 
       // Validate content
       const validation = validateDocumentContent(input.content);
@@ -196,8 +203,9 @@ export const documentsRouter = router({
    */
   getGenerationHistory: protectedProcedure
     .input(z.object({ projectId: z.number() }))
-    .query(async ({ input, ctx }) => {
-      if (!ctx.db) throw new Error("Database connection failed");
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
 
       // Query document generations from database
       // This would typically be from a documentGenerations table
@@ -219,7 +227,7 @@ export const documentsRouter = router({
         permission: z.enum(["view", "edit", "download"]),
       })
     )
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input }) => {
       // In production, you would:
       // 1. Create a document sharing record
       // 2. Send notification to shared user
@@ -236,23 +244,24 @@ export const documentsRouter = router({
    */
   getDocumentPreview: protectedProcedure
     .input(z.object({ documentId: z.number() }))
-    .query(async ({ input, ctx }) => {
-      if (!ctx.db) throw new Error("Database connection failed");
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
 
-      const document = await ctx.db.query.documents.findFirst({
-        where: (doc, { eq }) => eq(doc.id, input.documentId),
+      const doc = await db.query.documents.findFirst({
+        where: eq(documents.id, input.documentId),
       });
 
-      if (!document) {
+      if (!doc) {
         throw new Error("Document not found");
       }
 
       return {
-        id: document.id,
-        fileName: document.fileName,
-        fileUrl: document.fileUrl,
-        documentType: document.documentType,
-        createdAt: document.createdAt,
+        id: doc.id,
+        fileName: doc.fileName,
+        fileUrl: doc.fileUrl,
+        documentType: doc.documentType,
+        createdAt: doc.createdAt,
       };
     }),
 });
