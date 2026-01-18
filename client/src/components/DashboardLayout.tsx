@@ -39,6 +39,7 @@ import {
   FileText,
   FolderKanban,
   HardHat,
+  Info,
   LayoutDashboard,
   List,
   LogOut,
