@@ -32,6 +32,7 @@ import {
   Bot,
   Building2,
   Calendar,
+  CheckCircle,
   ChevronRight,
   Clock,
   ClipboardList,
