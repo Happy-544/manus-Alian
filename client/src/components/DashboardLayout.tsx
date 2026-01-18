@@ -40,6 +40,7 @@ import {
   FolderKanban,
   HardHat,
   LayoutDashboard,
+  List,
   LogOut,
   PanelLeft,
   Settings,
