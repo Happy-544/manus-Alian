@@ -52,40 +52,81 @@ export function MobileBottomNav() {
   // Find current nav item index
   const currentIndex = navItems.findIndex((item) => isActive(item.path));
 
+  // Calculate navigation steps based on velocity
+  const getNavigationSteps = (velocity?: number): number => {
+    if (!velocity) return 1;
+    // Velocity is in px/ms
+    // 0.5-1.0 px/ms = 1 step, 1.0-1.5 = 2 steps, 1.5+ = 3 steps
+    if (velocity >= 1.5) return 3;
+    if (velocity >= 1.0) return 2;
+    return 1;
+  };
+
   // Handle swipe navigation
-  const handleSwipeLeft = () => {
+  const handleSwipeLeft = (velocity?: number) => {
     if (isNavigating) return;
     setIsNavigating(true);
-    // Swipe left = next item (circular)
-    const nextIndex = (currentIndex + 1) % navItems.length;
+    const steps = getNavigationSteps(velocity);
+    const nextIndex = (currentIndex + steps) % navItems.length;
     navigate(navItems[nextIndex].path);
-    triggerHapticFeedback();
+    triggerHapticFeedback(velocity);
     setTimeout(() => setIsNavigating(false), 300);
   };
 
-  const handleSwipeRight = () => {
+  const handleSwipeRight = (velocity?: number) => {
     if (isNavigating) return;
     setIsNavigating(true);
-    // Swipe right = previous item (circular)
+    const steps = getNavigationSteps(velocity);
+    const prevIndex = (currentIndex - steps + navItems.length * 3) % navItems.length;
+    navigate(navItems[prevIndex].path);
+    triggerHapticFeedback(velocity);
+    setTimeout(() => setIsNavigating(false), 300);
+  };
+
+  // Handle fast swipes (skip to next/previous)
+  const handleFastSwipeLeft = () => {
+    if (isNavigating) return;
+    setIsNavigating(true);
+    const nextIndex = (currentIndex + 1) % navItems.length;
+    navigate(navItems[nextIndex].path);
+    triggerHapticFeedback(1.0, true);
+    setTimeout(() => setIsNavigating(false), 200);
+  };
+
+  const handleFastSwipeRight = () => {
+    if (isNavigating) return;
+    setIsNavigating(true);
     const prevIndex = (currentIndex - 1 + navItems.length) % navItems.length;
     navigate(navItems[prevIndex].path);
-    triggerHapticFeedback();
-    setTimeout(() => setIsNavigating(false), 300);
+    triggerHapticFeedback(1.0, true);
+    setTimeout(() => setIsNavigating(false), 200);
   };
 
   // Trigger haptic feedback if available
-  const triggerHapticFeedback = () => {
-    if (navigator.vibrate) {
+  const triggerHapticFeedback = (velocity?: number, isFast?: boolean) => {
+    if (!navigator.vibrate) return;
+    
+    if (isFast) {
+      // Double tap for fast swipe
+      navigator.vibrate([10, 50, 10]);
+    } else if (velocity && velocity > 1.0) {
+      // Stronger feedback for high velocity
+      navigator.vibrate(15);
+    } else {
+      // Normal feedback
       navigator.vibrate(10);
     }
   };
 
-  // Use swipe gesture hook
+  // Use swipe gesture hook with velocity detection
   useSwipeGesture(navRef, {
     minDistance: 30,
     maxDuration: 500,
+    velocityThreshold: 1.0,
     onSwipeLeft: handleSwipeLeft,
     onSwipeRight: handleSwipeRight,
+    onFastSwipeLeft: handleFastSwipeLeft,
+    onFastSwipeRight: handleFastSwipeRight,
   });
 
   return (

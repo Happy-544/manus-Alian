@@ -631,3 +631,15 @@
 - [x] Write unit tests for swipe gesture hook
 - [x] Test swipe navigation on various devices
 - [x] Verify gesture performance and responsiveness
+
+
+## Velocity Detection for Swipe Gestures
+- [x] Calculate velocity from swipe distance and duration
+- [x] Implement velocity threshold for fast swipes
+- [x] Add momentum-based multi-step navigation
+- [x] Create visual feedback for high-velocity swipes
+- [x] Add velocity configuration options
+- [x] Implement velocity decay animation
+- [x] Write unit tests for velocity calculation
+- [x] Test velocity detection on various devices
+- [x] Verify momentum navigation performance

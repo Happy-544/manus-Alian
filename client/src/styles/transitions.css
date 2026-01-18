@@ -78,3 +78,97 @@
     opacity: 1;
   }
 }
+
+/* Momentum-based animations for high-velocity swipes */
+
+@keyframes momentumSlideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(150%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes momentumSlideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-150%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes momentumSlideOutToRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(150%);
+  }
+}
+
+@keyframes momentumSlideOutToLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-150%);
+  }
+}
+
+/* Momentum animation classes */
+.momentum-enter-from-right {
+  animation: momentumSlideInFromRight 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.momentum-enter-from-left {
+  animation: momentumSlideInFromLeft 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.momentum-exit-to-right {
+  animation: momentumSlideOutToRight 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.momentum-exit-to-left {
+  animation: momentumSlideOutToLeft 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Pulse animation for velocity feedback */
+@keyframes velocityPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(217, 119, 6, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0);
+  }
+}
+
+.velocity-pulse {
+  animation: velocityPulse 0.6s ease-out;
+}
+
+/* Bounce animation for multi-step navigation */
+@keyframes navigationBounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.navigation-bounce {
+  animation: navigationBounce 0.3s ease-out;
+}

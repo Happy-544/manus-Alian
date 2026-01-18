@@ -3,10 +3,13 @@ import { useEffect, useRef, useState } from "react";
 export interface SwipeGestureConfig {
   minDistance?: number; // Minimum distance to trigger swipe (default: 50)
   maxDuration?: number; // Maximum duration for swipe in ms (default: 500)
-  onSwipeLeft?: () => void;
-  onSwipeRight?: () => void;
+  velocityThreshold?: number; // Velocity threshold for fast swipes (default: 0.5 px/ms)
+  onSwipeLeft?: (velocity?: number) => void;
+  onSwipeRight?: (velocity?: number) => void;
   onSwipeStart?: () => void;
-  onSwipeEnd?: () => void;
+  onSwipeEnd?: (velocity?: number) => void;
+  onFastSwipeLeft?: () => void; // High-velocity swipe left
+  onFastSwipeRight?: () => void; // High-velocity swipe right
 }
 
 export interface SwipeState {
@@ -15,6 +18,8 @@ export interface SwipeState {
   dragY: number;
   startX: number;
   startY: number;
+  velocity: number; // Pixels per millisecond
+  isFastSwipe: boolean; // Whether swipe exceeds velocity threshold
 }
 
 /**
@@ -28,10 +33,13 @@ export function useSwipeGesture(
   const {
     minDistance = 50,
     maxDuration = 500,
+    velocityThreshold = 0.5,
     onSwipeLeft,
     onSwipeRight,
     onSwipeStart,
     onSwipeEnd,
+    onFastSwipeLeft,
+    onFastSwipeRight,
   } = config;
 
   const [swipeState, setSwipeState] = useState<SwipeState>({
@@ -40,11 +48,15 @@ export function useSwipeGesture(
     dragY: 0,
     startX: 0,
     startY: 0,
+    velocity: 0,
+    isFastSwipe: false,
   });
 
   const touchStartRef = useRef<number>(0);
   const touchStartXRef = useRef<number>(0);
   const touchStartYRef = useRef<number>(0);
+  const lastTouchXRef = useRef<number>(0);
+  const lastTouchTimeRef = useRef<number>(0);
 
   useEffect(() => {
     if (!element?.current) return;
@@ -54,6 +66,8 @@ export function useSwipeGesture(
       touchStartRef.current = Date.now();
       touchStartXRef.current = touch.clientX;
       touchStartYRef.current = touch.clientY;
+      lastTouchXRef.current = touch.clientX;
+      lastTouchTimeRef.current = Date.now();
 
       setSwipeState((prev) => ({
         ...prev,
@@ -62,6 +76,8 @@ export function useSwipeGesture(
         startY: touch.clientY,
         dragX: 0,
         dragY: 0,
+        velocity: 0,
+        isFastSwipe: false,
       }));
 
       onSwipeStart?.();
@@ -74,10 +90,20 @@ export function useSwipeGesture(
       const dragX = touch.clientX - touchStartXRef.current;
       const dragY = touch.clientY - touchStartYRef.current;
 
+      // Calculate instantaneous velocity
+      const timeDelta = Date.now() - lastTouchTimeRef.current;
+      const distanceDelta = Math.abs(touch.clientX - lastTouchXRef.current);
+      const instantVelocity = timeDelta > 0 ? distanceDelta / timeDelta : 0;
+
+      lastTouchXRef.current = touch.clientX;
+      lastTouchTimeRef.current = Date.now();
+
       setSwipeState((prev) => ({
         ...prev,
         dragX,
         dragY,
+        velocity: instantVelocity,
+        isFastSwipe: instantVelocity > velocityThreshold,
       }));
     };
 
@@ -85,6 +111,8 @@ export function useSwipeGesture(
       const duration = Date.now() - touchStartRef.current;
       const dragX = swipeState.dragX;
       const dragY = swipeState.dragY;
+      const velocity = swipeState.velocity;
+      const isFastSwipe = swipeState.isFastSwipe;
 
       // Check if it's a valid swipe
       const isValidSwipe =
@@ -95,10 +123,18 @@ export function useSwipeGesture(
       if (isValidSwipe) {
         if (dragX > 0) {
           // Swiped right
-          onSwipeRight?.();
+          if (isFastSwipe) {
+            onFastSwipeRight?.();
+          } else {
+            onSwipeRight?.(velocity);
+          }
         } else {
           // Swiped left
-          onSwipeLeft?.();
+          if (isFastSwipe) {
+            onFastSwipeLeft?.();
+          } else {
+            onSwipeLeft?.(velocity);
+          }
         }
       }
 
@@ -107,9 +143,11 @@ export function useSwipeGesture(
         isDragging: false,
         dragX: 0,
         dragY: 0,
+        velocity: 0,
+        isFastSwipe: false,
       }));
 
-      onSwipeEnd?.();
+      onSwipeEnd?.(velocity);
     };
 
     const target = element.current;
@@ -122,7 +160,7 @@ export function useSwipeGesture(
       target.removeEventListener("touchmove", handleTouchMove);
       target.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [swipeState.isDragging, minDistance, maxDuration, onSwipeLeft, onSwipeRight, onSwipeStart, onSwipeEnd]);
+  }, [swipeState.isDragging, minDistance, maxDuration, velocityThreshold, onSwipeLeft, onSwipeRight, onSwipeStart, onSwipeEnd, onFastSwipeLeft, onFastSwipeRight]);
 
   return swipeState;
 }
