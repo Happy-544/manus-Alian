@@ -57,12 +57,12 @@ export const suppliersRouter = router({
         );
       }
 
-      let query = db.select().from(vendors);
+      let result;
       if (conditions.length > 0) {
-        query = db.select().from(vendors).where(and(...conditions));
+        result = await db.select().from(vendors).where(and(...conditions));
+      } else {
+        result = await db.select().from(vendors);
       }
-
-      const result = await query;
       return result || [];
     }),
 

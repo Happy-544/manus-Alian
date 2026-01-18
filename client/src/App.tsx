@@ -25,6 +25,7 @@ import FFE from "./pages/FFE";
 import { Analytics } from "./pages/Analytics";
 import { Sprints } from "./pages/Sprints";
 import { SupplierManagement } from "./pages/SupplierManagement";
+import { DocumentDetailPage } from "./pages/DocumentDetailPage";
 
 function Router() {
   return (
@@ -50,6 +51,7 @@ function Router() {
         <Route path="/sprints/:projectId" component={Sprints} />
         <Route path="/analytics/:projectId" component={Analytics} />
         <Route path="/suppliers" component={SupplierManagement} />
+        <Route path="/documents/:id" component={DocumentDetailPage} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

@@ -13,6 +13,7 @@ import { nanoid } from "nanoid";
 import { boqGapRouter } from "./routers/boqGapRouter";
 import { suppliersRouter } from "./routers/suppliersRouter";
 import { documentSharingRouter } from "./routers/documentSharingRouter";
+import { supplierFavoritesRouter } from "./routers/supplierFavoritesRouter";
 
 // Admin procedure - only allows admin users
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -27,6 +28,7 @@ export const appRouter = router({
   boqGap: boqGapRouter,
   suppliers: suppliersRouter,
   documentSharing: documentSharingRouter,
+  supplierFavorites: supplierFavoritesRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

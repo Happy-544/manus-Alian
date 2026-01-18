@@ -8,7 +8,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Star, MapPin, Phone, Mail } from "lucide-react";
+import { Loader2, Star, MapPin, Phone, Mail, Heart } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 export interface Supplier {
@@ -32,6 +32,7 @@ interface SupplierSelectorProps {
   selectedSupplierId?: number;
   maxResults?: number;
   showSearch?: boolean;
+  showFavorites?: boolean;
 }
 
 export function SupplierSelector({
@@ -40,10 +41,12 @@ export function SupplierSelector({
   selectedSupplierId,
   maxResults = 5,
   showSearch = true,
+  showFavorites = true,
 }: SupplierSelectorProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(category || "");
   const [sortBy, setSortBy] = useState<"rating" | "leadTime" | "price">("rating");
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   // Fetch all suppliers
   const { data: allSuppliers = [], isLoading: suppliersLoading } = trpc.suppliers.list.useQuery();
@@ -59,12 +62,24 @@ export function SupplierSelector({
     limit: maxResults,
   });
 
+  // Fetch user's favorite suppliers
+  const { data: favoriteSuppliers = [], isLoading: favoritesLoading } = trpc.supplierFavorites.getFavorites.useQuery();
+  const { data: favoriteIds = { ids: [] } } = trpc.supplierFavorites.getFavoriteIds.useQuery();
+
+  // Mutations for favorites
+  const toggleFavoriteMutation = trpc.supplierFavorites.toggleFavorite.useMutation();
+
   // Determine which suppliers to display
   const suppliers = useMemo(() => {
     let source = allSuppliers;
 
     if (selectedCategory && categorySuppliers.length > 0) {
       source = categorySuppliers;
+    }
+
+    // Filter by favorites if toggled
+    if (showFavoritesOnly) {
+      source = source.filter((s) => favoriteIds.ids.includes(s.id));
     }
 
     // Filter by search term
@@ -94,14 +109,22 @@ export function SupplierSelector({
     });
 
     return sorted.slice(0, maxResults);
-  }, [allSuppliers, categorySuppliers, selectedCategory, searchTerm, sortBy, maxResults]);
+  }, [allSuppliers, categorySuppliers, selectedCategory, searchTerm, sortBy, maxResults, showFavoritesOnly, favoriteIds.ids]);
 
-  const isLoading = suppliersLoading || categoryLoading || topLoading;
+  const isLoading = suppliersLoading || categoryLoading || topLoading || favoritesLoading;
 
   const getRatingColor = (rating: number) => {
     if (rating >= 4.5) return "text-green-600";
     if (rating >= 3.5) return "text-amber-600";
     return "text-red-600";
+  };
+
+  const handleToggleFavorite = (supplierId: number) => {
+    toggleFavoriteMutation.mutate({ supplierId });
+  };
+
+  const isFavorite = (supplierId: number) => {
+    return favoriteIds.ids.includes(supplierId);
   };
 
   return (
@@ -180,6 +203,19 @@ export function SupplierSelector({
               </Button>
             </div>
           </div>
+
+          {/* Favorites Toggle */}
+          {showFavorites && (
+            <Button
+              size="sm"
+              variant={showFavoritesOnly ? "default" : "outline"}
+              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+              className="w-full text-xs h-7"
+            >
+              <Heart className={`w-3 h-3 mr-1 ${showFavoritesOnly ? "fill-current" : ""}`} />
+              {showFavoritesOnly ? "Showing Favorites" : "Show Favorites"}
+            </Button>
+          )}
         </div>
       )}
 
@@ -191,7 +227,9 @@ export function SupplierSelector({
           </div>
         ) : suppliers.length === 0 ? (
           <div className="p-4 text-center text-sm text-muted-foreground bg-muted rounded-md">
-            No suppliers found. Try adjusting your search or filters.
+            {showFavoritesOnly
+              ? "No favorite suppliers yet. Star suppliers to add them to your favorites."
+              : "No suppliers found. Try adjusting your search or filters."}
           </div>
         ) : (
           suppliers.map((supplier) => (
@@ -202,7 +240,6 @@ export function SupplierSelector({
                   ? "border-gold bg-gold/10"
                   : "border-border hover:border-gold/50 hover:bg-muted/50"
               }`}
-              onClick={() => onSelect(supplier)}
             >
               {/* Header: Name and Rating */}
               <div className="flex items-start justify-between mb-2">
@@ -210,11 +247,30 @@ export function SupplierSelector({
                   <p className="text-sm font-semibold text-foreground">{supplier.name}</p>
                   <p className="text-xs text-muted-foreground">{supplier.category}</p>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Star className={`w-3 h-3 fill-current ${getRatingColor(supplier.rating)}`} />
-                  <span className={`text-xs font-semibold ${getRatingColor(supplier.rating)}`}>
-                    {supplier.rating.toFixed(1)}
-                  </span>
+                <div className="flex items-center gap-2">
+                  {showFavorites && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleFavorite(supplier.id);
+                      }}
+                      className="p-1 hover:bg-muted rounded transition-colors"
+                    >
+                      <Heart
+                        className={`w-4 h-4 ${
+                          isFavorite(supplier.id)
+                            ? "fill-red-500 text-red-500"
+                            : "text-muted-foreground"
+                        }`}
+                      />
+                    </button>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <Star className={`w-3 h-3 fill-current ${getRatingColor(supplier.rating)}`} />
+                    <span className={`text-xs font-semibold ${getRatingColor(supplier.rating)}`}>
+                      {supplier.rating.toFixed(1)}
+                    </span>
+                  </div>
                 </div>
               </div>
 
