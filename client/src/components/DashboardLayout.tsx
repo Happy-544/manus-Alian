@@ -117,6 +117,17 @@ const menuSections: MenuSection[] = [
     ],
   },
   {
+    title: "DASHBOARD",
+    icon: LayoutDashboard,
+    items: [
+      {
+        icon: LayoutDashboard,
+        label: "Dashboard",
+        path: "/dashboard",
+      },
+    ],
+  },
+  {
     title: "PROJECTS",
     icon: FolderKanban,
     items: [
@@ -302,7 +313,7 @@ export default function DashboardLayoutReorganized({
     return saved ? parseInt(saved, 10) : 280;
   });
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(["DOCUMENT CREATION"])
+    new Set(["DASHBOARD", "DOCUMENT CREATION"])
   );
   const { loading, user } = useAuth();
   const [location, navigate] = useLocation();

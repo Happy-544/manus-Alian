@@ -14,6 +14,8 @@ import { boqGapRouter } from "./routers/boqGapRouter";
 import { suppliersRouter } from "./routers/suppliersRouter";
 import { documentSharingRouter } from "./routers/documentSharingRouter";
 import { supplierFavoritesRouter } from "./routers/supplierFavoritesRouter";
+import { emailNotificationsRouter } from "./routers/emailNotificationsRouter";
+import { boqExcelImportRouter } from "./routers/boqExcelImportRouter";
 
 // Admin procedure - only allows admin users
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -29,6 +31,8 @@ export const appRouter = router({
   suppliers: suppliersRouter,
   documentSharing: documentSharingRouter,
   supplierFavorites: supplierFavoritesRouter,
+  emailNotifications: emailNotificationsRouter,
+  boqExcelImport: boqExcelImportRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
