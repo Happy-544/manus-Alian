@@ -398,3 +398,12 @@
 - [ ] Test complete workflow from upload to document generation
 - [ ] Add email notification when documents are shared
 - [ ] Implement document access logs for audit trail
+
+
+## Database Query Fixes (Phase 4)
+- [x] Fixed documentsRouter database query syntax to match boqGapRouter pattern
+- [x] Updated z.record() calls to use proper Zod syntax with key and value types
+- [x] Fixed field names to match documents table schema (name instead of fileName, category instead of documentType)
+- [ ] Fix documentSharingRouter database field references
+- [ ] Fix suppliersRouter query building syntax
+- [ ] Run full test suite to verify all fixes
