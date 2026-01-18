@@ -11,6 +11,8 @@ import { sprints, teamVelocity, workspaceStorage } from "../drizzle/schema";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
 import { boqGapRouter } from "./routers/boqGapRouter";
+import { suppliersRouter } from "./routers/suppliersRouter";
+import { documentSharingRouter } from "./routers/documentSharingRouter";
 
 // Admin procedure - only allows admin users
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -23,6 +25,8 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 export const appRouter = router({
   system: systemRouter,
   boqGap: boqGapRouter,
+  suppliers: suppliersRouter,
+  documentSharing: documentSharingRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

@@ -389,9 +389,11 @@
 - [x] Create SupplierManagement page with CRUD operations and rating system
 - [x] Create DocumentVersioningSharing component for version history and sharing
 - [x] Create suppliersRouter tRPC endpoints for supplier management
-- [ ] Add suppliers router to main appRouter
-- [ ] Create document sharing router for versioning and permissions
-- [ ] Add SupplierManagement page to main navigation
+- [x] Add suppliers router to main appRouter
+- [x] Create document sharing router for versioning and permissions
+- [x] Add documentSharingRouter to main appRouter
+- [x] Add SupplierManagement page to main navigation in DashboardLayout
+- [x] Add Supplier Database menu item to PROCUREMENT section
 - [ ] Add DocumentVersioningSharing to document detail pages
 - [ ] Test complete workflow from upload to document generation
 - [ ] Add email notification when documents are shared

@@ -57,6 +57,7 @@ import {
   MessageSquare,
   Layers,
   ChevronDown,
+  Star,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -218,6 +219,16 @@ const menuSections: MenuSection[] = [
         label: "Value Engineering",
         path: "/procurement/value-engineering",
       },
+      {
+        icon: Users,
+        label: "Supplier Database",
+        path: "/suppliers",
+        subItems: [
+          { icon: Users, label: "All Suppliers", path: "/suppliers" },
+          { icon: Plus, label: "Add Supplier", path: "/suppliers/new" },
+          { icon: Star, label: "Top Rated", path: "/suppliers/top-rated" },
+        ],
+      },
     ],
   },
   {
@@ -279,8 +290,7 @@ const menuSections: MenuSection[] = [
   },
 ];
 
-// Import missing icons
-import { Clock, List, Info, CheckCircle, Truck, Activity } from "lucide-react";
+
 
 export default function DashboardLayoutReorganized({
   children,

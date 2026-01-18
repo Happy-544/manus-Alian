@@ -24,6 +24,7 @@ import Materials from "./pages/Materials";
 import FFE from "./pages/FFE";
 import { Analytics } from "./pages/Analytics";
 import { Sprints } from "./pages/Sprints";
+import { SupplierManagement } from "./pages/SupplierManagement";
 
 function Router() {
   return (
@@ -48,6 +49,7 @@ function Router() {
         <Route path="/settings" component={Settings} />
         <Route path="/sprints/:projectId" component={Sprints} />
         <Route path="/analytics/:projectId" component={Analytics} />
+        <Route path="/suppliers" component={SupplierManagement} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
