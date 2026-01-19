@@ -996,3 +996,89 @@ export const bulkImportResults = mysqlTable("bulk_import_results", {
 });
 export type BulkImportResult = typeof bulkImportResults.$inferSelect;
 export type InsertBulkImportResult = typeof bulkImportResults.$inferInsert;
+
+
+/**
+ * Email Verification table - stores email verification tokens and status
+ */
+export const emailVerifications = mysqlTable("email_verifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  isVerified: boolean("isVerified").default(false).notNull(),
+  verifiedAt: timestamp("verifiedAt"),
+  expiresAt: timestamp("expiresAt").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type EmailVerification = typeof emailVerifications.$inferSelect;
+export type InsertEmailVerification = typeof emailVerifications.$inferInsert;
+
+/**
+ * Collaboration Sessions table - tracks active editing sessions
+ */
+export const collaborationSessions = mysqlTable("collaboration_sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  documentId: int("documentId").notNull(),
+  sessionId: varchar("sessionId", { length: 255 }).notNull().unique(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+});
+export type CollaborationSession = typeof collaborationSessions.$inferSelect;
+export type InsertCollaborationSession = typeof collaborationSessions.$inferInsert;
+
+/**
+ * Active Users table - tracks users currently editing documents
+ */
+export const activeUsers = mysqlTable("active_users", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: varchar("sessionId", { length: 255 }).notNull(),
+  userId: int("userId").notNull(),
+  documentId: int("documentId").notNull(),
+  cursorPosition: int("cursorPosition").default(0).notNull(),
+  cursorLine: int("cursorLine").default(0).notNull(),
+  color: varchar("color", { length: 7 }).notNull(), // Hex color for cursor
+  lastActivity: timestamp("lastActivity").defaultNow().notNull(),
+  isTyping: boolean("isTyping").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ActiveUser = typeof activeUsers.$inferSelect;
+export type InsertActiveUser = typeof activeUsers.$inferInsert;
+
+/**
+ * Document Changes table - stores collaborative document edits
+ */
+export const documentChanges = mysqlTable("document_changes", {
+  id: int("id").autoincrement().primaryKey(),
+  documentId: int("documentId").notNull(),
+  sessionId: varchar("sessionId", { length: 255 }).notNull(),
+  userId: int("userId").notNull(),
+  changeType: mysqlEnum("changeType", ["insert", "delete", "replace", "format"]).notNull(),
+  position: int("position").notNull(),
+  content: text("content"),
+  deletedContent: text("deletedContent"),
+  version: int("version").notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type DocumentChange = typeof documentChanges.$inferSelect;
+export type InsertDocumentChange = typeof documentChanges.$inferInsert;
+
+/**
+ * Cursor Positions table - tracks real-time cursor positions for active users
+ */
+export const cursorPositions = mysqlTable("cursor_positions", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: varchar("sessionId", { length: 255 }).notNull(),
+  userId: int("userId").notNull(),
+  documentId: int("documentId").notNull(),
+  position: int("position").notNull(),
+  line: int("line").notNull(),
+  column: int("column").notNull(),
+  selection: json("selection").$type<{ start: number; end: number }>(),
+  lastUpdated: timestamp("lastUpdated").defaultNow().onUpdateNow().notNull(),
+});
+export type CursorPosition = typeof cursorPositions.$inferSelect;
+export type InsertCursorPosition = typeof cursorPositions.$inferInsert;

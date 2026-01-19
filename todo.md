@@ -643,3 +643,40 @@
 - [x] Write unit tests for velocity calculation
 - [x] Test velocity detection on various devices
 - [x] Verify momentum navigation performance
+
+
+## Keyboard Shortcut for Help Menu
+- [x] Create useKeyboardShortcut custom hook
+- [x] Implement global keyboard listener for "?" key
+- [x] Integrate with existing help menu component
+- [x] Add keyboard shortcut indicator to help button
+- [x] Test keyboard shortcut on various browsers
+- [x] Add accessibility features for keyboard navigation
+
+## Email Verification Flow
+- [x] Create email verification database table
+- [x] Build email verification service with token generation
+- [ ] Implement email sending via SMTP/service
+- [x] Create verification endpoint in API
+- [ ] Build verification UI component
+- [ ] Add email verification to signup flow
+- [x] Implement resend verification email functionality
+- [x] Add verification status tracking
+- [ ] Write tests for verification flow
+
+## Real-Time Collaboration with WebSocket
+- [x] Set up WebSocket server infrastructure
+- [x] Create collaboration database tables (sessions, active_users, document_changes)
+- [ ] Implement WebSocket connection management
+- [x] Build document change tracking system
+- [x] Implement cursor position tracking
+- [x] Add active user indicators component
+- [ ] Create presence detection system
+- [ ] Build conflict resolution for simultaneous edits
+- [ ] Implement document sync on connection
+- [ ] Add user activity indicators (typing, viewing)
+- [x] Create collaboration UI components
+- [x] Write WebSocket event handlers
+- [ ] Implement error recovery and reconnection
+- [ ] Write comprehensive tests for collaboration
+- [ ] Test real-time sync across multiple clients

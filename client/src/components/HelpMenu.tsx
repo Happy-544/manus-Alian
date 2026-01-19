@@ -5,6 +5,7 @@
 
 import { useState } from "react";
 import * as React from "react";
+import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,6 +29,7 @@ interface HelpMenuProps {
 }
 
 export function HelpMenu({ onRestartTour }: HelpMenuProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [showRestartModal, setShowRestartModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [isFirstLogin, setIsFirstLogin] = useState(() => {
@@ -56,12 +58,20 @@ export function HelpMenu({ onRestartTour }: HelpMenuProps) {
     }
   };
 
+  // Handle keyboard shortcut for help menu
+  useKeyboardShortcut({
+    key: "?",
+    callback: () => setIsOpen(true),
+    preventDefault: true,
+  });
+
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <Button
           variant="ghost"
           size="icon"
+          onClick={() => setIsOpen(!isOpen)}
           className={`h-9 w-9 rounded-full hover:bg-gold/10 transition-all duration-200 hover:scale-110 ${
             isFirstLogin ? 'animate-pulse ring-2 ring-gold ring-offset-2 ring-offset-background' : ''
           }`}
